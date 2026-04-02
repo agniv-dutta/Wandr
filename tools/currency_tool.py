@@ -36,26 +36,23 @@ def convert_currency(query: str) -> str:
         
     from_currency = parts[1].strip().upper()
     to_currency = parts[2].strip().upper()
-    
-    url = f"https://v6.exchangerate-api.com/v6/{API_KEY}/pair/{from_currency}/{to_currency}/{amount}"
+
+    clean_api_key = (API_KEY or "").strip()
+    if not clean_api_key or clean_api_key == "YOUR_KEY_HERE":
+        return "Config Error: EXCHANGE_RATE_API_KEY is missing or invalid. Please set a real ExchangeRate-API v6 key in .env."
+
+    amount_param = int(amount) if amount.is_integer() else amount
+    url = f"https://v6.exchangerate-api.com/v6/{clean_api_key}/pair/{from_currency}/{to_currency}/{amount_param}"
     
     try:
         response = requests.get(url, timeout=10)
+        response.raise_for_status()
         data = response.json()
         
         # Handle specific API errors
         if data.get("result") == "error":
             error_type = data.get("error-type")
-            if error_type == "invalid-key":
-                return "Config Error: Invalid ExchangeRate API key. Please check your key."
-            elif error_type == "unsupported-code":
-                return f"Unsupported Currency: One or both currency codes ({from_currency}, {to_currency}) are not supported."
-            elif error_type == "quota-reached":
-                return "Quota Error: The free tier limit for the ExchangeRate API has been reached."
-            else:
-                return f"API Error: {error_type}"
-                
-        response.raise_for_status()
+            return f"API Error: {error_type}"
         
         conversion_result = data.get("conversion_result")
         conversion_rate = data.get("conversion_rate")
@@ -69,6 +66,8 @@ def convert_currency(query: str) -> str:
                 
     except requests.exceptions.Timeout:
         return "Timeout Error: The currency API took too long to respond. Please try again later."
+    except requests.exceptions.HTTPError as e:
+        return f"HTTP Error: ExchangeRate API returned status {response.status_code}. Details: {response.text[:300]} | {str(e)}"
     except requests.exceptions.RequestException as e:
         return f"Network Error: Could not connect to the currency API. Details: {str(e)}"
     except Exception as e:
