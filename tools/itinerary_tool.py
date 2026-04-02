@@ -1,8 +1,12 @@
 import requests
 import json
+import os
+from dotenv import load_dotenv
 from langchain.tools import tool
 
-GROQ_API_KEY = "your_key_here"  # Replace with your Groq API key
+# Load environment variables from .env file
+load_dotenv()
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 @tool
 def generate_itinerary(trip_details: str) -> str:
@@ -12,7 +16,7 @@ def generate_itinerary(trip_details: str) -> str:
     url = "https://api.groq.com/openai/v1/chat/completions"
     
     headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
+        "Authorization": f"Bearer {GROQ_API_KEY}",  # Loaded from .env
         "Content-Type": "application/json"
     }
     

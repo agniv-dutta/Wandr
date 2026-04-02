@@ -1,7 +1,11 @@
 import requests
+import os
+from dotenv import load_dotenv
 from langchain.tools import tool
 
-API_KEY = "your_key_here"  # Replace with your ExchangeRate-API key
+# Load environment variables from .env file
+load_dotenv()
+API_KEY = os.getenv("EXCHANGE_RATE_API_KEY")
 
 CURRENCY_NAMES = {
     "INR": "Indian Rupee",

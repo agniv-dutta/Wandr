@@ -4,45 +4,52 @@ A travel-planning agent backend with a placeholder frontend. The backend exposes
 
 ## Project Structure
 
-```
+```text
 Wandr/
+  .env
+  .venv/
+  agent_core.py
+  main.py
+  requirements.txt
+  tools/
+    destination_tool.py
+    currency_tool.py
+    itinerary_tool.py
+    weather_tool.py
   backend/
-    __init__.py
-    agent_core.py
-    run_tools_demo.py
-    requirements.txt
-    tools/
-      __init__.py
-      destination_tool.py
-      weather_tool.py
   frontend/
-    index.html
 ```
 
-## Backend Setup
+## Setup
 
-Create and activate a virtual environment, then install dependencies:
+Use the root project folder, activate the existing virtual environment, and install dependencies:
 
 ```powershell
-cd c:\Projects\Wandr
-python -m venv .\backend\.venv
-.\backend\.venv\Scripts\Activate.ps1
-pip install -r .\backend\requirements.txt
+cd c:\Users\Agniv Dutta\Wandr
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 ```
 
-## Run the Backend Demo
+## Run The App
 
-Runs the destination, weather, currency conversion, and itinerary generation tools (uses public APIs):
+Run the current app from the project root:
 
 ```powershell
-cd c:\Projects\Wandr
-python -m backend.run_tools_demo
+cd c:\Users\Agniv Dutta\Wandr
+python main.py
 ```
 
-## Agent Core
+## What To Expect
 
-`backend/agent_core.py` builds the LangChain agent. To run an agent session, configure a Groq API key and wire tools in your own entry point.
+The app will create a timestamped log file in `logs/`, then run three demo travel-planning prompts through the agent.
+
+For each query, it prints the user prompt, calls the configured tools, and then shows the agent's final answer. The tool outputs and agent steps are also visible because `verbose=True` is enabled in `agent_core.py`.
+
+## Environment
+
+Keep API keys in the root `.env` file. Copy `.env.example` if you need a fresh template.
+By default the agent uses `llama-3.1-8b-instant`, and you can override it with `GROQ_MODEL` in `.env` if needed.
 
 ## Frontend
 
-`frontend/index.html` is a static placeholder. Replace it with your UI and connect it to the backend when ready.
+`frontend/` is still a placeholder. It is not required to run the current agent demo.

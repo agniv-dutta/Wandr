@@ -1,5 +1,9 @@
 import requests
+import os
+from dotenv import load_dotenv
 from langchain.tools import tool
+
+load_dotenv()
 
 @tool
 def generate_itinerary(trip_details: str) -> str:
@@ -29,7 +33,7 @@ def generate_itinerary(trip_details: str) -> str:
         # Call Groq (free LLM) to generate the itinerary
         groq_url = "https://api.groq.com/openai/v1/chat/completions"
         headers = {
-            "Authorization": "Bearer YOUR_GROQ_API_KEY",
+            "Authorization": f"Bearer {os.getenv('GROQ_API_KEY')}",
             "Content-Type": "application/json"
         }
         prompt = f"""

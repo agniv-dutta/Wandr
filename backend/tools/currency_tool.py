@@ -1,5 +1,9 @@
 import requests
+import os
+from dotenv import load_dotenv
 from langchain.tools import tool
+
+load_dotenv()
 
 @tool
 def convert_currency(query: str) -> str:
@@ -21,7 +25,7 @@ def convert_currency(query: str) -> str:
 
         # ExchangeRate-API: 1500 free calls/month, no card needed
         # Sign up at https://www.exchangerate-api.com/ for a free key
-        API_KEY = "YOUR_ACTUAL_API_KEY"  # Replace with your real API key from exchangerate-api.com
+        API_KEY = os.getenv("EXCHANGE_RATE_API_KEY")
         url = f"https://v6.exchangerate-api.com/v6/{API_KEY}/pair/{from_currency}/{to_currency}/{amount}"
 
         response = requests.get(url)
