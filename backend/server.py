@@ -2,12 +2,13 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 import json
 from datetime import datetime, timedelta
 import random
 import sys
 import os
+import requests
 from dotenv import load_dotenv
 
 # Add the parent directory to the path to import agent_core
@@ -100,6 +101,25 @@ class TripResponse(BaseModel):
 class DestinationRequest(BaseModel):
     name: str
 
+
+class BudgetBreakdownRequest(BaseModel):
+    destination: str
+    origin: Optional[str] = ""
+    duration: int
+    budgetAmount: float
+    budgetCurrency: str
+    budgetLevel: str
+    departureDate: str
+    adults: int = 1
+
+
+class PlaceSuggestion(BaseModel):
+    name: str
+    display_name: str
+    city: str = ""
+    country: str = ""
+    type: str = ""
+
 # ==================== HELPER FUNCTIONS ====================
 
 def generate_sample_itinerary(destination: str, duration: int, budget_level: str, travel_style: str) -> str:
@@ -168,6 +188,82 @@ def generate_sample_itinerary(destination: str, duration: int, budget_level: str
     itinerary += f"- **Total: ${(budget_range['low'] + budget_range['high']) * duration:.0f}**\n"
 
     return itinerary
+
+
+def _normalize_country_label(destination: str) -> str:
+    known = {
+        "india": "India",
+        "thailand": "Thailand",
+        "indonesia": "Indonesia",
+        "france": "France",
+        "japan": "Japan",
+        "uk": "UK",
+        "united kingdom": "UK",
+        "usa": "USA",
+        "united states": "USA",
+        "australia": "Australia",
+        "singapore": "Singapore",
+        "uae": "UAE",
+        "dubai": "UAE",
+    }
+
+    value = (destination or "").strip().lower()
+    if value in known:
+        return known[value]
+
+    # Common city -> country hints
+    city_to_country = {
+        "mumbai": "India",
+        "delhi": "India",
+        "bangalore": "India",
+        "chennai": "India",
+        "pune": "India",
+        "goa": "India",
+        "tokyo": "Japan",
+        "kyoto": "Japan",
+        "osaka": "Japan",
+        "paris": "France",
+        "london": "UK",
+        "new york": "USA",
+        "los angeles": "USA",
+        "sydney": "Australia",
+        "melbourne": "Australia",
+        "bangkok": "Thailand",
+        "bali": "Indonesia",
+        "jakarta": "Indonesia",
+        "singapore city": "Singapore",
+        "singapore": "Singapore",
+    }
+
+    return city_to_country.get(value, "default")
+
+
+def _convert_amount_safe(from_currency: str, to_currency: str, amount: float) -> float:
+    if from_currency.upper() == to_currency.upper():
+        return float(amount)
+
+    try:
+        from backend.tools.currency_tool import convert_amount
+        converted = convert_amount(from_currency.upper(), to_currency.upper(), float(amount))
+        value = converted.get("converted", 0.0)
+        return float(value) if value else float(amount)
+    except Exception:
+        return float(amount)
+
+
+def _estimate_flight_fallback_inr(origin: str, destination: str) -> int:
+    o = (origin or "").strip().lower()
+    d = (destination or "").strip().lower()
+
+    india = {"mumbai", "delhi", "bangalore", "chennai", "kolkata", "hyderabad", "pune", "goa", "ahmedabad"}
+    if o in india and d in india:
+        return 8500
+
+    long_haul = {"new york", "london", "paris", "tokyo", "sydney", "los angeles", "toronto"}
+    if o in long_haul or d in long_haul:
+        return 52000
+
+    return 28000
 
 # ==================== ENDPOINTS ====================
 
@@ -483,16 +579,32 @@ async def get_destination(name: str):
 @app.post("/api/transport")
 async def get_transport(request: TransportRequest):
     try:
-        from backend.tools.transport_tool import get_transport_prices
-        data = get_transport_prices.run(
-            {
-                "origin": request.origin,
-                "destination": request.destination,
-                "date": request.date,
-                "modes": request.modes,
-            }
+        from backend.tools.transport_tool import get_transport_options_data
+        return get_transport_options_data(
+            from_city=request.origin,
+            to_city=request.destination,
+            date=request.date,
+            currency="INR",
         )
-        return json.loads(data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/transport")
+async def get_transport_v2(
+    from_city: str = Query(..., alias="from"),
+    to_city: str = Query(..., alias="to"),
+    date: str = Query(...),
+    currency: str = Query("INR"),
+):
+    try:
+        from backend.tools.transport_tool import get_transport_options_data
+        return get_transport_options_data(
+            from_city=from_city,
+            to_city=to_city,
+            date=date,
+            currency=currency,
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -529,6 +641,220 @@ async def get_budget(request: BudgetRequest):
             }
         )
         return json.loads(data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/budget-breakdown")
+async def get_budget_breakdown(request: BudgetBreakdownRequest):
+    try:
+        destination_country = _normalize_country_label(request.destination)
+
+        hotel_base = {
+            "budget": 1500,
+            "moderate": 4000,
+            "luxury": 12000,
+        }
+        food_base = {
+            "budget": 800,
+            "moderate": 2000,
+            "luxury": 5000,
+        }
+        activities_base = {
+            "budget": 500,
+            "moderate": 1500,
+            "luxury": 4000,
+        }
+
+        destination_multiplier = {
+            "India": 1.0,
+            "Thailand": 1.2,
+            "Indonesia": 1.1,
+            "France": 3.5,
+            "Japan": 3.0,
+            "UK": 4.0,
+            "USA": 3.8,
+            "Australia": 3.2,
+            "Singapore": 3.5,
+            "UAE": 2.5,
+            "default": 2.0,
+        }
+
+        food_multiplier = {
+            "India": 1.0,
+            "Thailand": 0.9,
+            "Indonesia": 0.9,
+            "France": 2.4,
+            "Japan": 2.2,
+            "UK": 2.8,
+            "USA": 2.6,
+            "Australia": 2.4,
+            "Singapore": 2.3,
+            "UAE": 2.0,
+            "default": 1.8,
+        }
+
+        level = (request.budgetLevel or "moderate").strip().lower()
+        level = level if level in {"budget", "moderate", "luxury"} else "moderate"
+        nights = max(int(request.duration), 1)
+        adults = max(int(request.adults), 1)
+
+        hotel_mult = destination_multiplier.get(destination_country, destination_multiplier["default"])
+        food_mult = food_multiplier.get(destination_country, food_multiplier["default"])
+
+        transport_amount = 0.0
+        transport_source = "not_applicable"
+        transport_confidence = "high"
+        transport_detail = "No origin city provided"
+
+        if (request.origin or "").strip():
+            from backend.tools.flight_tool import search_flights_structured
+
+            flight_result = search_flights_structured(
+                from_city=request.origin,
+                to_city=request.destination,
+                departure_date=request.departureDate,
+                currency=request.budgetCurrency,
+                adults=adults,
+                max_results=5,
+            )
+
+            if flight_result.get("success") and flight_result.get("offers"):
+                cheapest = min(flight_result["offers"], key=lambda item: item.get("price", float("inf")))
+                transport_amount = float(cheapest.get("price", 0.0)) * adults
+                transport_source = "travelpayouts_live"
+                transport_confidence = "high"
+                stops = int(cheapest.get("stops", 0))
+                stop_text = "Direct" if stops == 0 else ("1 stop" if stops == 1 else f"{stops} stops")
+                transport_detail = (
+                    f"Cheapest flight: {cheapest.get('airline', 'Airline')} {stop_text} - "
+                    f"{request.budgetCurrency} {transport_amount:,.0f}"
+                )
+            else:
+                estimated_inr = _estimate_flight_fallback_inr(request.origin, request.destination)
+                amount = _convert_amount_safe("INR", request.budgetCurrency, estimated_inr)
+                transport_amount = float(amount) * adults
+                transport_source = "estimated"
+                transport_confidence = "low"
+                if flight_result.get("error_type") == "test_mode_limited":
+                    transport_detail = "Live pricing unavailable for this route from free provider. Estimated with distance heuristic."
+                elif flight_result.get("error_type") == "quota_exceeded":
+                    transport_detail = "Free flight API quota exceeded. Estimated with distance heuristic."
+                else:
+                    transport_detail = "Live flight lookup unavailable. Estimated with distance heuristic."
+
+        hotel_per_night_inr = hotel_base[level] * hotel_mult
+        food_per_day_inr = food_base[level] * food_mult
+        activity_per_day_inr = activities_base[level]
+
+        accommodation_amount = _convert_amount_safe("INR", request.budgetCurrency, hotel_per_night_inr * nights)
+        food_amount = _convert_amount_safe("INR", request.budgetCurrency, food_per_day_inr * nights)
+        activities_amount = _convert_amount_safe("INR", request.budgetCurrency, activity_per_day_inr * nights)
+
+        # Multiply non-transport categories by group size.
+        accommodation_amount *= adults
+        food_amount *= adults
+        activities_amount *= adults
+
+        subtotal = transport_amount + accommodation_amount + food_amount + activities_amount
+        misc_amount = subtotal * 0.10
+        total = subtotal + misc_amount
+
+        overage = max(total - float(request.budgetAmount), 0.0)
+        within_budget = overage <= 0
+
+        return {
+            "breakdown": {
+                "transport": {
+                    "amount": round(transport_amount, 2),
+                    "currency": request.budgetCurrency,
+                    "source": transport_source,
+                    "confidence": transport_confidence,
+                    "detail": transport_detail,
+                },
+                "accommodation": {
+                    "amount": round(accommodation_amount, 2),
+                    "currency": request.budgetCurrency,
+                    "source": "estimated",
+                    "confidence": "medium",
+                    "detail": (
+                        f"{level.title()} hotel, {nights} nights x approximately {request.budgetCurrency} "
+                        f"{(accommodation_amount / max(nights * adults, 1)):,.0f}/night"
+                    ),
+                },
+                "food": {
+                    "amount": round(food_amount, 2),
+                    "currency": request.budgetCurrency,
+                    "source": "estimated",
+                    "confidence": "medium",
+                    "detail": (
+                        f"Approximately {request.budgetCurrency} {(food_amount / max(nights * adults, 1)):,.0f}/day x {nights} days"
+                    ),
+                },
+                "activities": {
+                    "amount": round(activities_amount, 2),
+                    "currency": request.budgetCurrency,
+                    "source": "estimated",
+                    "confidence": "low",
+                    "detail": "Estimated for sightseeing and local experiences.",
+                },
+                "misc": {
+                    "amount": round(misc_amount, 2),
+                    "currency": request.budgetCurrency,
+                    "source": "calculated",
+                    "confidence": "high",
+                    "detail": "10% buffer on subtotal",
+                },
+            },
+            "total": round(total, 2),
+            "currency": request.budgetCurrency,
+            "withinBudget": within_budget,
+            "overage": round(overage, 2),
+            "adults": adults,
+            "perPerson": round(total / adults, 2),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/places/suggest")
+async def suggest_places(q: str = Query(..., min_length=1), limit: int = Query(8, ge=1, le=10)):
+    try:
+        geo_url = "https://nominatim.openstreetmap.org/search"
+        geo_params = {
+            "q": q,
+            "format": "jsonv2",
+            "addressdetails": 1,
+            "limit": limit,
+            "dedupe": 1,
+        }
+        headers = {"User-Agent": "WandrPlanner/1.0"}
+        response = requests.get(geo_url, params=geo_params, headers=headers, timeout=15)
+        response.raise_for_status()
+
+        suggestions: List[PlaceSuggestion] = []
+        for item in response.json():
+            address = item.get("address", {}) or {}
+            city = (
+                address.get("city")
+                or address.get("town")
+                or address.get("village")
+                or address.get("hamlet")
+                or address.get("municipality")
+                or item.get("name")
+                or item.get("display_name", "").split(",")[0]
+            )
+            suggestions.append(
+                PlaceSuggestion(
+                    name=item.get("name") or city,
+                    display_name=item.get("display_name", city),
+                    city=city,
+                    country=address.get("country", ""),
+                    type=item.get("type", ""),
+                )
+            )
+
+        return suggestions
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

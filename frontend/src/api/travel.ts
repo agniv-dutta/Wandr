@@ -1,5 +1,17 @@
 import axios, { AxiosInstance } from 'axios';
-import { TripFormData, TripResult, WeatherForecast, CurrencyConversion, DestinationInfo, TransportPricesResponse, FoodEstimate, BudgetBreakdown } from '../types';
+import {
+  TripFormData,
+  TripResult,
+  WeatherForecast,
+  CurrencyConversion,
+  DestinationInfo,
+  TransportPricesResponse,
+  FoodEstimate,
+  BudgetBreakdown,
+  PlaceSuggestion,
+  TransportOverviewResponse,
+  BudgetBreakdownResponse,
+} from '../types';
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -71,6 +83,7 @@ export const travelApi = {
       origin: formData.origin,
       startDate: formData.startDate,
       budgetCurrency: formData.budgetCurrency,
+      budgetAmount: formData.budgetAmount,
     };
   },
 
@@ -118,8 +131,22 @@ export const travelApi = {
     return response.data;
   },
 
+  searchPlaces: async (query: string): Promise<PlaceSuggestion[]> => {
+    const response = await api.get<PlaceSuggestion[]>('/api/places/suggest', {
+      params: { q: query },
+    });
+    return response.data;
+  },
+
   getTransportPrices: async (payload: { origin: string; destination: string; date: string; modes: string[] }): Promise<TransportPricesResponse> => {
     const response = await api.post<TransportPricesResponse>('/api/transport', payload);
+    return response.data;
+  },
+
+  getTransportOverview: async (params: { from: string; to: string; date: string; currency: string }): Promise<TransportOverviewResponse> => {
+    const response = await api.get<TransportOverviewResponse>('/api/transport', {
+      params,
+    });
     return response.data;
   },
 
@@ -130,6 +157,20 @@ export const travelApi = {
 
   getBudgetEstimate: async (payload: { destination: string; origin: string; start_date: string; end_date: string; travelers: number; budget_level: string }): Promise<BudgetBreakdown> => {
     const response = await api.post<BudgetBreakdown>('/api/budget', payload);
+    return response.data;
+  },
+
+  getBudgetBreakdown: async (payload: {
+    destination: string;
+    origin: string;
+    duration: number;
+    budgetAmount: number;
+    budgetCurrency: string;
+    budgetLevel: string;
+    departureDate: string;
+    adults: number;
+  }): Promise<BudgetBreakdownResponse> => {
+    const response = await api.post<BudgetBreakdownResponse>('/api/budget-breakdown', payload);
     return response.data;
   },
 

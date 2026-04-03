@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Calendar, dateFnsLocalizer, Event as CalendarEvent } from 'react-big-calendar';
+import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -30,6 +30,13 @@ interface ParsedEvent {
   title: string;
   time: string;
   description: string;
+}
+
+interface TripCalendarEvent {
+  title: string;
+  start: Date;
+  end: Date;
+  allDay?: boolean;
 }
 
 const parseEvents = (text: string): ParsedEvent[] => {
@@ -70,13 +77,13 @@ export const TripCalendar: React.FC<TripCalendarProps> = ({ destination, duratio
 
   const parsedEvents = useMemo(() => parseEvents(finalAnswer), [finalAnswer]);
 
-  const calendarEvents: CalendarEvent[] = useMemo(() => {
+  const calendarEvents: TripCalendarEvent[] = useMemo(() => {
     const tripBlock = {
       title: `Trip to ${destination}`,
       start,
       end: new Date(end.getTime() + 24 * 60 * 60 * 1000),
       allDay: true,
-    } as CalendarEvent;
+    } as TripCalendarEvent;
 
     const dayEvents = parsedEvents.map(event => {
       const eventDate = new Date(start);
@@ -86,7 +93,7 @@ export const TripCalendar: React.FC<TripCalendarProps> = ({ destination, duratio
         start: eventDate,
         end: eventDate,
         allDay: true,
-      } as CalendarEvent;
+      } as TripCalendarEvent;
     });
 
     return [tripBlock, ...dayEvents];
@@ -144,7 +151,7 @@ export const TripCalendar: React.FC<TripCalendarProps> = ({ destination, duratio
         endAccessor="end"
         style={{ height: 360 }}
         views={['month']}
-        onSelectEvent={(event: CalendarEvent) => {
+        onSelectEvent={(event: TripCalendarEvent) => {
           if (event.title.startsWith('Trip')) {
             setSelectedDay(null);
           } else {
@@ -152,7 +159,7 @@ export const TripCalendar: React.FC<TripCalendarProps> = ({ destination, duratio
             setSelectedDay(dayIndex);
           }
         }}
-        eventPropGetter={(event: CalendarEvent) => {
+        eventPropGetter={(event: TripCalendarEvent) => {
           if (event.title.startsWith('Trip')) {
             return { className: 'bg-orange-500 text-white border-0' };
           }

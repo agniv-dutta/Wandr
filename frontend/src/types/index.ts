@@ -35,6 +35,7 @@ export interface TripResult {
   origin: string;
   startDate: string;
   budgetCurrency: string;
+  budgetAmount: number;
 }
 
 export interface TransportPrice {
@@ -96,6 +97,78 @@ export interface CurrencyConversion {
   from: string;
   to: string;
   amount: number;
+}
+
+export interface PlaceSuggestion {
+  name: string;
+  display_name: string;
+  city: string;
+  country: string;
+  type: string;
+}
+
+export interface FlightOffer {
+  airline: string;
+  airlineCode: string;
+  departureTime: string;
+  arrivalTime: string;
+  arrivalDayOffset: number;
+  duration: string;
+  durationMinutes: number;
+  stops: number;
+  price: number;
+  currency: string;
+  route: string;
+}
+
+export interface GroundTransportOption {
+  mode: 'train' | 'bus';
+  journeyTime: string;
+  priceRange: string;
+  frequency: string;
+  source: 'live' | 'estimated' | string;
+  minPrice?: number;
+  durationHours?: number;
+}
+
+export interface TransportModeResponse {
+  applicable: boolean;
+  options: GroundTransportOption[];
+  message?: string;
+}
+
+export interface TransportOverviewResponse {
+  flights: FlightOffer[];
+  flightSource?: string;
+  flightMessage?: string;
+  trains: TransportModeResponse;
+  buses: TransportModeResponse;
+  bestValue: 'flight' | 'train' | 'bus' | null;
+  bestValueReason: string;
+}
+
+export interface BudgetBreakdownCategory {
+  amount: number;
+  currency: string;
+  source: 'travelpayouts_live' | 'estimated' | 'calculated' | 'not_applicable' | string;
+  confidence: 'high' | 'medium' | 'low';
+  detail: string;
+}
+
+export interface BudgetBreakdownResponse {
+  breakdown: {
+    transport: BudgetBreakdownCategory;
+    accommodation: BudgetBreakdownCategory;
+    food: BudgetBreakdownCategory;
+    activities: BudgetBreakdownCategory;
+    misc: BudgetBreakdownCategory;
+  };
+  total: number;
+  currency: string;
+  withinBudget: boolean;
+  overage: number;
+  adults: number;
+  perPerson: number;
 }
 
 export interface WeatherForecast {

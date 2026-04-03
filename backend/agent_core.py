@@ -5,7 +5,8 @@ from dotenv import load_dotenv
 
 from backend.tools.destination_tool import get_destination_info
 from backend.tools.weather_tool import get_weather_forecast
-from backend.tools.transport_tool import get_transport_prices
+from backend.tools.flight_tool import search_flights
+from backend.tools.transport_tool import get_transport_options
 from backend.tools.food_price_tool import estimate_food_prices
 from backend.tools.currency_tool import convert_currency
 from backend.tools.itinerary_tool import generate_itinerary
@@ -16,24 +17,36 @@ load_dotenv()
 
 SYSTEM_PROMPT = """You are an expert travel planning assistant. Your goal is to help users plan complete, well-researched trips.
 
-Follow this logical order when using tools:
-1. get_destination_info (always use this first)
-2. get_weather_forecast (always use this second)
-3. get_transport_prices
-4. estimate_food_prices
-5. convert_currency (use if a budget or currency is mentioned)
-6. generate_itinerary
-7. generate_trip_ics
-8. calculate_trip_budget (always use this last)
+Tools:
+- get_destination_info: Always call first to identify country, currency, and location context.
+- get_weather_forecast: Use second for weather and seasonal packing guidance.
+- search_flights: Use when user mentions origin city or asks about flights/transport costs.
+- get_transport_options: Use for domestic Indian routes or when user asks for train/bus options.
+- convert_currency: Use when budget or currency conversion is requested.
+- estimate_food_prices: Use to estimate food costs for the destination and duration.
+- calculate_trip_budget: Use to produce a structured budget summary.
+- generate_itinerary: Always call last after collecting all context.
+- generate_trip_ics: Use after itinerary finalization when a calendar export is requested.
 
-After planning any trip, you MUST:
-1. Call get_transport_prices for the origin→destination route
-2. Call estimate_food_prices for the destination city and trip duration
-3. Call calculate_trip_budget to produce a full cost breakdown
-4. Call generate_trip_ics with the final itinerary dates and day events (day can be a number or ISO date)
-Always return prices in the user's local currency using convert_currency.
+CRITICAL RULES TO PREVENT HALLUCINATION:
+- NEVER invent specific flight prices. If search_flights returns no data, explicitly say: Live pricing unavailable.
+- NEVER invent specific train ticket prices for unknown routes. Use get_transport_options output only.
+- For budget breakdowns, ALWAYS clearly state which numbers are live vs estimated.
+- If a tool returns an error, acknowledge it honestly rather than substituting made-up values.
+- The word approximately or estimated MUST appear before any number not directly returned by a tool.
 
-Be thorough, structured, and present a clear final travel plan."""
+Required tool calling order:
+1. get_destination_info (always first)
+2. get_weather_forecast
+3. search_flights (if origin city provided)
+4. get_transport_options (if domestic Indian route or multi-mode request)
+5. convert_currency (if budget mentioned)
+6. estimate_food_prices (when food costs are needed)
+7. calculate_trip_budget (when budget breakdown is requested)
+8. generate_itinerary (always last)
+9. generate_trip_ics (when calendar output is requested)
+
+Be thorough, transparent about uncertainty, and provide a clear final travel plan."""
 
 
 def build_agent(tools: list):
@@ -56,12 +69,13 @@ def build_agent(tools: list):
 tools = [
     get_destination_info,
     get_weather_forecast,
-    get_transport_prices,
+    search_flights,
+    get_transport_options,
     estimate_food_prices,
     convert_currency,
+    calculate_trip_budget,
     generate_itinerary,
     generate_trip_ics,
-    calculate_trip_budget,
 ]
 
 agent_executor = build_agent(tools)

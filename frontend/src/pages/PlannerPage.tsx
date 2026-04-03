@@ -5,8 +5,8 @@ import { Footer } from '../components/layout/Footer';
 import { TripForm } from '../components/planner/TripForm';
 import { ResultPanel } from '../components/planner/ResultPanel';
 import { TripCalendar } from '../components/planner/TripCalendar';
-import { TransportPriceCard } from '../components/planner/TransportPriceCard';
-import { BudgetSummary } from '../components/planner/BudgetSummary';
+import { TransportPanel } from '../components/planner/TransportPanel';
+import { BudgetChart } from '../components/planner/BudgetChart';
 import { TripFormData } from '../types';
 import { useTripPlanner } from '../hooks/useTripPlanner';
 import { motion } from 'framer-motion';
@@ -101,11 +101,11 @@ export const PlannerPage: React.FC = () => {
               )}
 
               {result && (
-                <TransportPriceCard
+                <TransportPanel
                   origin={result.origin}
                   destination={result.destination}
-                   date={result.startDate}
-                  budgetCurrency={result.budgetCurrency}
+                  date={result.startDate}
+                  currency={result.budgetCurrency}
                 />
               )}
 
@@ -120,13 +120,15 @@ export const PlannerPage: React.FC = () => {
       </main>
 
       {result && (
-        <BudgetSummary
+        <BudgetChart
           destination={result.destination}
           origin={result.origin}
           duration={result.duration}
           budgetLevel={result.budgetLevel}
-           startDate={result.startDate}
+          departureDate={result.startDate}
+          budgetAmount={result.budgetAmount}
           budgetCurrency={result.budgetCurrency}
+          adults={1}
         />
       )}
 

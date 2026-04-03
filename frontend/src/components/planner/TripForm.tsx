@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { TripFormData } from '../../types';
+import React, { useEffect, useState } from 'react';
+import { PlaceSuggestion, TripFormData } from '../../types';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
 import { MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { travelApi } from '../../api/travel';
 
 interface TripFormProps {
   onSubmit: (data: TripFormData) => Promise<void>;
@@ -25,6 +26,11 @@ const travelStyles = [
 
 const currencies = ['INR', 'USD', 'EUR', 'GBP', 'JPY', 'AUD', 'THB', 'SGD'];
 
+const formatSuggestion = (place: PlaceSuggestion) => {
+  const parts = [place.city || place.name, place.country].filter(Boolean);
+  return parts.length ? parts.join(', ') : place.display_name;
+};
+
 export const TripForm: React.FC<TripFormProps> = ({ onSubmit, isLoading, initialData }) => {
   const [formData, setFormData] = useState<TripFormData>({
     destination: initialData?.destination || '',
@@ -37,6 +43,94 @@ export const TripForm: React.FC<TripFormProps> = ({ onSubmit, isLoading, initial
     travelStyle: initialData?.travelStyle || 'Balanced',
     constraints: initialData?.constraints || '',
   });
+  const [destinationSuggestions, setDestinationSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [originSuggestions, setOriginSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [destinationFocused, setDestinationFocused] = useState(false);
+  const [originFocused, setOriginFocused] = useState(false);
+  const [destinationSearching, setDestinationSearching] = useState(false);
+  const [originSearching, setOriginSearching] = useState(false);
+
+  useEffect(() => {
+    const query = formData.destination.trim();
+
+    if (!query) {
+      setDestinationSuggestions([]);
+      setDestinationSearching(false);
+      return;
+    }
+
+    let active = true;
+    setDestinationSearching(true);
+
+    const timeout = window.setTimeout(async () => {
+      try {
+        const results = await travelApi.searchPlaces(query);
+        if (active) {
+          setDestinationSuggestions(results);
+        }
+      } catch {
+        if (active) {
+          setDestinationSuggestions([]);
+        }
+      } finally {
+        if (active) {
+          setDestinationSearching(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
+  }, [formData.destination]);
+
+  useEffect(() => {
+    const query = formData.origin.trim();
+
+    if (!query) {
+      setOriginSuggestions([]);
+      setOriginSearching(false);
+      return;
+    }
+
+    let active = true;
+    setOriginSearching(true);
+
+    const timeout = window.setTimeout(async () => {
+      try {
+        const results = await travelApi.searchPlaces(query);
+        if (active) {
+          setOriginSuggestions(results);
+        }
+      } catch {
+        if (active) {
+          setOriginSuggestions([]);
+        }
+      } finally {
+        if (active) {
+          setOriginSearching(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
+  }, [formData.origin]);
+
+  const selectPlace = (field: 'destination' | 'origin', value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+
+    if (field === 'destination') {
+      setDestinationSuggestions([]);
+      setDestinationFocused(false);
+    } else {
+      setOriginSuggestions([]);
+      setOriginFocused(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,8 +175,40 @@ export const TripForm: React.FC<TripFormProps> = ({ onSubmit, isLoading, initial
               placeholder="Where do you want to go?"
               value={formData.destination}
               onChange={e => setFormData(prev => ({ ...prev, destination: e.target.value }))}
+              onFocus={() => setDestinationFocused(true)}
+              onBlur={() => window.setTimeout(() => setDestinationFocused(false), 150)}
+              autoComplete="off"
+              spellCheck={false}
               className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 pl-12 text-zinc-50 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all duration-300"
             />
+            {destinationFocused && (destinationSearching || destinationSuggestions.length > 0) && (
+              <div className="absolute left-0 right-0 top-full mt-2 z-30 overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900/98 shadow-2xl shadow-black/40 backdrop-blur-xl">
+                {destinationSearching && destinationSuggestions.length === 0 ? (
+                  <div className="px-4 py-3 text-sm text-zinc-400">Searching places...</div>
+                ) : (
+                  <ul className="max-h-64 overflow-auto py-2">
+                    {destinationSuggestions.map(place => (
+                      <li key={`${place.name}-${place.display_name}`}>
+                        <button
+                          type="button"
+                          onMouseDown={event => {
+                            event.preventDefault();
+                            selectPlace('destination', formatSuggestion(place));
+                          }}
+                          className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-zinc-800"
+                        >
+                          <MapPin className="mt-0.5 shrink-0 text-violet-400" size={16} />
+                          <span>
+                            <span className="block text-sm font-medium text-zinc-50">{formatSuggestion(place)}</span>
+                            <span className="block text-xs text-zinc-500 truncate">{place.display_name}</span>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -91,13 +217,48 @@ export const TripForm: React.FC<TripFormProps> = ({ onSubmit, isLoading, initial
           <label className="block text-sm font-medium text-zinc-300 mb-2">
             Origin City
           </label>
-          <input
-            type="text"
-            placeholder="Where are you starting from?"
-            value={formData.origin}
-            onChange={e => setFormData(prev => ({ ...prev, origin: e.target.value }))}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-50 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all duration-300"
-          />
+          <div className="relative">
+            <input
+              id="origin-city-input"
+              type="text"
+              placeholder="Where are you starting from?"
+              value={formData.origin}
+              onChange={e => setFormData(prev => ({ ...prev, origin: e.target.value }))}
+              onFocus={() => setOriginFocused(true)}
+              onBlur={() => window.setTimeout(() => setOriginFocused(false), 150)}
+              autoComplete="off"
+              spellCheck={false}
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 text-zinc-50 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-all duration-300"
+            />
+            {originFocused && (originSearching || originSuggestions.length > 0) && (
+              <div className="absolute left-0 right-0 top-full mt-2 z-30 overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900/98 shadow-2xl shadow-black/40 backdrop-blur-xl">
+                {originSearching && originSuggestions.length === 0 ? (
+                  <div className="px-4 py-3 text-sm text-zinc-400">Searching places...</div>
+                ) : (
+                  <ul className="max-h-64 overflow-auto py-2">
+                    {originSuggestions.map(place => (
+                      <li key={`${place.name}-${place.display_name}`}>
+                        <button
+                          type="button"
+                          onMouseDown={event => {
+                            event.preventDefault();
+                            selectPlace('origin', formatSuggestion(place));
+                          }}
+                          className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-zinc-800"
+                        >
+                          <MapPin className="mt-0.5 shrink-0 text-violet-400" size={16} />
+                          <span>
+                            <span className="block text-sm font-medium text-zinc-50">{formatSuggestion(place)}</span>
+                            <span className="block text-xs text-zinc-500 truncate">{place.display_name}</span>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Duration Slider */}
