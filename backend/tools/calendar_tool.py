@@ -40,7 +40,7 @@ def _normalize_events(events: Any) -> List[Dict]:
 
 
 @tool
-def generate_trip_ics(destination: str, start_date: str, end_date: str, events: List[Dict[str, str]]) -> str:
+def generate_trip_ics(destination: str, start_date: str, end_date: str, events: Any) -> str:
     """
     Generates an .ics file for a trip.
     Input schema: { destination, start_date, end_date, events: [{day, title, time, description}] }

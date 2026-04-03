@@ -101,7 +101,7 @@ export const BudgetChart: React.FC<BudgetChartProps> = ({
 
   if (loading) {
     return (
-      <div className="fixed bottom-4 right-6 left-6 lg:left-[40%] rounded-2xl border border-zinc-800 bg-zinc-900/95 p-6 shadow-xl">
+      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/95 p-6 shadow-xl">
         <p className="text-sm text-zinc-400">Loading budget breakdown...</p>
       </div>
     );
@@ -109,7 +109,7 @@ export const BudgetChart: React.FC<BudgetChartProps> = ({
 
   if (error) {
     return (
-      <div className="fixed bottom-4 right-6 left-6 lg:left-[40%] rounded-2xl border border-red-700/40 bg-zinc-900/95 p-6 shadow-xl">
+      <div className="rounded-2xl border border-red-700/40 bg-zinc-900/95 p-6 shadow-xl">
         <p className="text-sm text-red-300">{error}</p>
       </div>
     );
@@ -120,7 +120,7 @@ export const BudgetChart: React.FC<BudgetChartProps> = ({
   }
 
   return (
-    <div className="fixed bottom-4 right-6 left-6 lg:left-[40%] rounded-2xl border border-zinc-800 bg-zinc-900/95 p-6 shadow-xl">
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/95 p-6 shadow-xl">
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h3 className="text-lg font-bold text-zinc-50">Budget Breakdown</h3>

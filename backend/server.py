@@ -10,6 +10,7 @@ import sys
 import os
 import requests
 from dotenv import load_dotenv
+import re
 
 # Add the parent directory to the path to import agent_core
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -190,6 +191,13 @@ def generate_sample_itinerary(destination: str, duration: int, budget_level: str
     return itinerary
 
 
+def _has_structured_itinerary(text: str) -> bool:
+    if not text:
+        return False
+
+    return bool(re.search(r"(?:^|\n)(?:\*\*)?(?:#+\s*)?Day\s+1\b", text, flags=re.IGNORECASE))
+
+
 def _normalize_country_label(destination: str) -> str:
     known = {
         "india": "India",
@@ -311,6 +319,25 @@ async def plan_trip(request: TripRequest):
             )
             if itinerary_step and itinerary_step.output:
                 final_answer = itinerary_step.output
+
+            if not _has_structured_itinerary(final_answer):
+                from backend.tools.itinerary_tool import generate_itinerary
+
+                itinerary_input = (
+                    f"destination: {request.destination}, duration: {request.duration} days, "
+                    f"budget: {request.budgetLevel}, style: {request.travelStyle}, "
+                    f"constraints: {request.constraints or 'none'}"
+                )
+                fallback_itinerary = generate_itinerary.run(itinerary_input)
+                if _has_structured_itinerary(fallback_itinerary):
+                    final_answer = fallback_itinerary
+                    intermediate_steps.append(
+                        IntermediateStep(
+                            tool="generate_itinerary_fallback",
+                            input=itinerary_input,
+                            output=fallback_itinerary,
+                        )
+                    )
 
             return TripResponse(
                 final_answer=final_answer,

@@ -20,8 +20,8 @@ interface DayPlan {
 
 const parseDayPlan = (text: string): DayPlan[] => {
   const patterns = [
-    /(?:^|\n)#+\s*Day\s+(\d+)[:\s-]*([\s\S]*?)(?=(?:\n#+\s*Day\s+\d+)|\n\s*Budget Summary|$)/gi,
-    /(?:^|\n)Day\s+(\d+)[:\s-]*([\s\S]*?)(?=(?:\nDay\s+\d+)|\n\s*Budget Summary|$)/gi,
+    /(?:^|\n)(?:\*\*)?(?:#+\s*)?Day\s+(\d+)[:\s-]*([\s\S]*?)(?=(?:\n(?:\*\*)?(?:#+\s*)?Day\s+\d+)|\n\s*(?:\*\*)?Budget Summary|$)/gi,
+    /(?:^|\n)(?:\*\*)?Day\s+(\d+)[:\s-]*([\s\S]*?)(?=(?:\n(?:\*\*)?Day\s+\d+)|\n\s*(?:\*\*)?Budget Summary|$)/gi,
   ];
 
   const days: DayPlan[] = [];
@@ -63,7 +63,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ finalAnswer, destina
   const [foodRate, setFoodRate] = useState(1);
 
   const days = parseDayPlan(finalAnswer);
-  const budgetMatch = finalAnswer.match(/Budget[^]*?(?=\n\n|$)/i);
+  const budgetMatch = finalAnswer.match(/(?:\*\*)?Budget[^]*?(?=\n\n|$)/i);
   const budgetSummary = budgetMatch ? budgetMatch[0] : null;
 
   useEffect(() => {

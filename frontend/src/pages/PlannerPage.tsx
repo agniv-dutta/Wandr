@@ -109,6 +109,19 @@ export const PlannerPage: React.FC = () => {
                 />
               )}
 
+              {result && (
+                <BudgetChart
+                  destination={result.destination}
+                  origin={result.origin}
+                  duration={result.duration}
+                  budgetLevel={result.budgetLevel}
+                  departureDate={result.startDate}
+                  budgetAmount={result.budgetAmount}
+                  budgetCurrency={result.budgetCurrency}
+                  adults={1}
+                />
+              )}
+
               <ResultPanel
                 result={result}
                 isLoading={isLoading}
@@ -118,19 +131,6 @@ export const PlannerPage: React.FC = () => {
           </div>
         </div>
       </main>
-
-      {result && (
-        <BudgetChart
-          destination={result.destination}
-          origin={result.origin}
-          duration={result.duration}
-          budgetLevel={result.budgetLevel}
-          departureDate={result.startDate}
-          budgetAmount={result.budgetAmount}
-          budgetCurrency={result.budgetCurrency}
-          adults={1}
-        />
-      )}
 
       <Footer />
     </div>

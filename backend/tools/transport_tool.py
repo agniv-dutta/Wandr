@@ -365,6 +365,10 @@ def get_transport_options(query: str) -> str:
 # Compatibility wrapper for older imports
 @tool
 def get_transport_prices(origin: str, destination: str, date: str, modes: List[str]) -> str:
+    """
+    Compatibility wrapper that returns transport price blocks for flight/train/bus.
+    Input schema: { origin, destination, date, modes }
+    """
     data = get_transport_options_data(origin, destination, date)
     mode_map = {
         "flight": data.get("flights", [None])[0],
