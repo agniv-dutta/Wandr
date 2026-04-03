@@ -852,15 +852,22 @@ async def suggest_places(q: str = Query(..., min_length=1), limit: int = Query(8
             "q": q,
             "format": "jsonv2",
             "addressdetails": 1,
+            "namedetails": 1,
+            "accept-language": "en",
             "limit": limit,
             "dedupe": 1,
         }
-        headers = {"User-Agent": "WandrPlanner/1.0"}
+        headers = {
+            "User-Agent": "WandrPlanner/1.0",
+            "Accept-Language": "en",
+        }
         response = requests.get(geo_url, params=geo_params, headers=headers, timeout=15)
         response.raise_for_status()
 
         suggestions: List[PlaceSuggestion] = []
         for item in response.json():
+            name_details = item.get("namedetails", {}) or {}
+            english_name = name_details.get("name:en") or name_details.get("name")
             address = item.get("address", {}) or {}
             city = (
                 address.get("city")
@@ -868,12 +875,13 @@ async def suggest_places(q: str = Query(..., min_length=1), limit: int = Query(8
                 or address.get("village")
                 or address.get("hamlet")
                 or address.get("municipality")
+                or english_name
                 or item.get("name")
                 or item.get("display_name", "").split(",")[0]
             )
             suggestions.append(
                 PlaceSuggestion(
-                    name=item.get("name") or city,
+                    name=english_name or item.get("name") or city,
                     display_name=item.get("display_name", city),
                     city=city,
                     country=address.get("country", ""),

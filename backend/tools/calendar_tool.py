@@ -3,10 +3,11 @@ import os
 import tempfile
 from datetime import datetime, date, time, timedelta
 from uuid import uuid4
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 
 from icalendar import Calendar, Event
 from langchain.tools import tool
+from pydantic import BaseModel
 
 
 def _parse_date(value: str) -> date:
@@ -16,9 +17,16 @@ def _parse_date(value: str) -> date:
 def _parse_time(value: str) -> time:
     if not value:
         return time(9, 0)
-    parts = value.split(":")
+    cleaned = value.strip().lower()
+    is_pm = "pm" in cleaned
+    cleaned = cleaned.replace("am", "").replace("pm", "").strip()
+    parts = cleaned.split(":")
     hour = int(parts[0])
-    minute = int(parts[1]) if len(parts) > 1 else 0
+    minute = int(parts[1].strip()) if len(parts) > 1 else 0
+    if is_pm and hour < 12:
+        hour += 12
+    if not is_pm and hour == 12:
+        hour = 0
     return time(hour, minute)
 
 
@@ -39,7 +47,24 @@ def _normalize_events(events: Any) -> List[Dict]:
     return [event for event in events if isinstance(event, dict)]
 
 
-@tool
+class CalendarEventPayload(BaseModel):
+    day: str
+    title: str
+    time: str = ""
+    description: str = ""
+
+    class Config:
+        extra = "allow"
+
+
+class CalendarPayload(BaseModel):
+    destination: str
+    start_date: str
+    end_date: str
+    events: List[CalendarEventPayload] = []
+
+
+@tool(args_schema=CalendarPayload)
 def generate_trip_ics(destination: str, start_date: str, end_date: str, events: Any) -> str:
     """
     Generates an .ics file for a trip.

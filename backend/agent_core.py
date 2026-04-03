@@ -26,7 +26,6 @@ Tools:
 - estimate_food_prices: Use to estimate food costs for the destination and duration.
 - calculate_trip_budget: Use to produce a structured budget summary.
 - generate_itinerary: Always call last after collecting all context.
-- generate_trip_ics: Use only when the user explicitly asks to add or export the trip to a calendar.
 
 CRITICAL RULES TO PREVENT HALLUCINATION:
 - NEVER invent specific flight prices. If search_flights returns no data, explicitly say: Live pricing unavailable.
@@ -44,7 +43,6 @@ Required tool calling order:
 6. estimate_food_prices (when food costs are needed)
 7. calculate_trip_budget (when budget breakdown is requested)
 8. generate_itinerary (always last)
-9. generate_trip_ics (only when calendar output is requested)
 
 Be thorough, transparent about uncertainty, and provide a clear final travel plan."""
 
@@ -75,7 +73,6 @@ tools = [
     convert_currency,
     calculate_trip_budget,
     generate_itinerary,
-    generate_trip_ics,
 ]
 
 agent_executor = build_agent(tools)

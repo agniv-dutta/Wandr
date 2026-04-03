@@ -123,34 +123,45 @@ def _duration_label(minutes: int) -> str:
 
 
 def _resolve_iata(city_name: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
-    try:
-        response = requests.get(
-            TP_AUTOCOMPLETE_URL,
-            params={
-                "term": city_name,
-                "locale": "en",
-                "types[]": ["city", "airport"],
-            },
-            timeout=15,
-        )
-        response.raise_for_status()
-        data = response.json()
+    def _candidates(value: str) -> List[str]:
+        cleaned = " ".join((value or "").strip().split())
+        if not cleaned:
+            return []
+        parts = [cleaned]
+        for sep in [",", "/", "-"]:
+            if sep in cleaned:
+                parts.append(cleaned.split(sep)[0].strip())
+        return list(dict.fromkeys([p for p in parts if p]))
 
-        if not data:
-            return None, city_name, "not_found"
+    for term in _candidates(city_name):
+        try:
+            response = requests.get(
+                TP_AUTOCOMPLETE_URL,
+                params={
+                    "term": term,
+                    "locale": "en",
+                    "types[]": ["city", "airport"],
+                },
+                timeout=15,
+            )
+            response.raise_for_status()
+            data = response.json()
 
-        preferred = next((item for item in data if item.get("type") == "city"), data[0])
-        code = preferred.get("code") or preferred.get("iata")
-        name = preferred.get("name") or city_name
+            if not data:
+                continue
 
-        if not code or len(code) != 3:
-            return None, name, "invalid_iata"
+            preferred = next((item for item in data if item.get("type") == "city"), data[0])
+            code = preferred.get("code") or preferred.get("iata") or preferred.get("airport_iata")
+            name = preferred.get("name") or term
 
-        return code.upper(), name, None
-    except requests.Timeout:
-        return None, city_name, "lookup_timeout"
-    except Exception:
-        return None, city_name, "lookup_failed"
+            if code and len(code) == 3:
+                return code.upper(), name, None
+        except requests.Timeout:
+            return None, city_name, "lookup_timeout"
+        except Exception:
+            continue
+
+    return None, city_name, "invalid_iata"
 
 
 def _fetch_travelpayouts_prices(origin_iata: str, destination_iata: str, departure_date: str, currency: str) -> Dict:
