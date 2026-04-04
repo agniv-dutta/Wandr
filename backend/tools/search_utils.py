@@ -9,7 +9,7 @@ def search_web(query: str) -> str:
     params = {"q": query}
     headers = {"User-Agent": "WandrAgent/1.0"}
     try:
-        response = requests.get(url, params=params, headers=headers, timeout=15)
+        response = requests.get(url, params=params, headers=headers, timeout=5)
         response.raise_for_status()
         return response.text
     except Exception:

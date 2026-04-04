@@ -63,6 +63,8 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ finalAnswer, destina
   const [foodRate, setFoodRate] = useState(1);
 
   const days = parseDayPlan(finalAnswer);
+  const destinationParts = destination.split(',').map(p => p.trim()).filter(Boolean);
+  const destinationCountry = destinationParts.length > 1 ? destinationParts[destinationParts.length - 1] : '';
   const budgetMatch = finalAnswer.match(/(?:\*\*)?Budget[^]*?(?=\n\n|$)/i);
   const budgetSummary = budgetMatch ? budgetMatch[0] : null;
 
@@ -71,7 +73,7 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ finalAnswer, destina
       try {
         const response = await travelApi.getDailyFoodPlan({
           city: destination,
-          country: '',
+          country: destinationCountry,
           days: duration,
           budget_level: budgetLevel.toLowerCase(),
           itinerary_days: days.map(day => day.activities.join('; ')),
@@ -194,17 +196,41 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ finalAnswer, destina
                             <p className="text-xs text-zinc-400">🍽 Breakfast idea: {dayFood.breakfast.suggestion}</p>
                             <p className="text-xs text-zinc-400">🥗 Lunch idea: {dayFood.lunch.suggestion}</p>
                             <p className="text-xs text-zinc-400">🍲 Dinner idea: {dayFood.dinner.suggestion}</p>
-                            <p className="text-xs text-zinc-500">{foodPlan?.notes}</p>
-                            {dayFood.nearby_source && (
-                              <a
-                                href={dayFood.nearby_source}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-block text-xs text-violet-300 hover:text-violet-200 underline"
-                              >
-                                Explore nearby food picks
-                              </a>
-                            )}
+                            <p className="text-xs text-zinc-500">
+                              Daily food costs vary by itinerary context, neighborhood, and meal style. Prices shown in {budgetCurrency}.
+                            </p>
+                            <div className="flex flex-wrap gap-3 pt-1">
+                              {dayFood.lunch_source && (
+                                <a
+                                  href={dayFood.lunch_source}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-block text-xs text-violet-300 hover:text-violet-200 underline"
+                                >
+                                  Explore nearby lunch spots
+                                </a>
+                              )}
+                              {dayFood.dinner_source && (
+                                <a
+                                  href={dayFood.dinner_source}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-block text-xs text-violet-300 hover:text-violet-200 underline"
+                                >
+                                  Explore nearby dinner spots
+                                </a>
+                              )}
+                              {!dayFood.lunch_source && !dayFood.dinner_source && dayFood.nearby_source && (
+                                <a
+                                  href={dayFood.nearby_source}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-block text-xs text-violet-300 hover:text-violet-200 underline"
+                                >
+                                  Explore nearby food picks
+                                </a>
+                              )}
+                            </div>
                           </div>
                         )}
                         {dayFood && dayFood.daily_total === 0 && (

@@ -77,6 +77,8 @@ export interface FoodDayPlanItem {
   lunch: FoodDayMeal;
   dinner: FoodDayMeal;
   daily_total: number;
+  lunch_source?: string;
+  dinner_source?: string;
   nearby_source?: string;
 }
 
