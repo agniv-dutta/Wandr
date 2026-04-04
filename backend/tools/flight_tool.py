@@ -22,6 +22,10 @@ GOOGLE_FLIGHTS_BASE = "https://www.google.com/flights"
 AIRLINE_NAMES = {
     "AI": "Air India",
     "6E": "IndiGo",
+    "IX": "Air India Express",
+    "SG": "SpiceJet",
+    "QP": "Akasa Air",
+    "UK": "Vistara",
     "EK": "Emirates",
     "BA": "British Airways",
     "LH": "Lufthansa",
@@ -38,13 +42,14 @@ AIRLINE_NAMES = {
     "TK": "Turkish Airways",
     "SA": "South African Airways",
     "SV": "Saudia",
-    "FX": "FedEx",
     "AE": "Aegean Airlines",
     "OS": "Austrian Airlines",
     "AZ": "Alitalia",
     "LX": "SWISS",
     "OU": "Croatia Airlines",
 }
+
+CARGO_KEYWORDS = ["cargo", "freight", "fedex", "dhl", "ups"]
 
 COUNTRY_CAPITALS = {
     "bulgaria": ("SOF", "Sofia"),
@@ -83,6 +88,73 @@ COUNTRY_CAPITALS = {
     "egypt": ("CAI", "Cairo"),
 }
 
+INR_TO_CURRENCY = {
+    "INR": 1.0,
+    "USD": 0.012,
+    "EUR": 0.011,
+    "GBP": 0.0095,
+    "AUD": 0.018,
+    "CAD": 0.016,
+    "JPY": 1.8,
+    "THB": 0.44,
+    "SGD": 0.016,
+}
+
+
+def _convert_inr_amount(amount_in_inr: float, currency: str) -> float:
+    rate = INR_TO_CURRENCY.get((currency or "INR").upper(), INR_TO_CURRENCY["USD"])
+    return amount_in_inr * rate
+
+
+def _is_reasonable_flight_price(price: float, currency: str) -> bool:
+    if price <= 0:
+        return False
+
+    c = (currency or "USD").upper()
+    limits = {
+        "USD": (40, 4000),
+        "EUR": (35, 3500),
+        "GBP": (30, 3200),
+        "INR": (2000, 350000),
+        "JPY": (5000, 500000),
+        "AUD": (70, 5000),
+        "CAD": (60, 5000),
+        "THB": (1000, 120000),
+        "SGD": (80, 6000),
+    }
+    low, high = limits.get(c, (30, 5000))
+    return low <= price <= high
+
+
+def _common_airlines_for_route(origin_city: str, destination_city: str) -> List[Tuple[str, str]]:
+    route_text = f"{origin_city} {destination_city}".lower()
+
+    def pick(codes: List[str]) -> List[Tuple[str, str]]:
+        return [(code, AIRLINE_NAMES[code]) for code in codes if code in AIRLINE_NAMES]
+
+    indian_city_tokens = ["delhi", "mumbai", "bangalore", "chennai", "hyderabad", "kolkata", "pune", "ahmedabad", "goa", "jaipur", "lucknow"]
+    if any(token in route_text for token in ["india"]) or sum(token in route_text for token in indian_city_tokens) >= 2:
+        return pick(["6E", "AI", "IX", "SG", "QP", "UK"])
+
+    if any(token in route_text for token in ["germany", "france", "uk", "united kingdom", "europe", "berlin", "paris", "london", "amsterdam", "zurich", "vienna"]):
+        return pick(["LH", "BA", "AF", "LX", "KL", "TK", "UA", "DL", "AA"])
+
+    if any(token in route_text for token in ["kenya", "nairobi", "africa", "johannesburg", "cairo"]):
+        return pick(["EK", "TK", "QR", "LH", "SV"])
+
+    if any(token in route_text for token in ["us", "usa", "united states", "new york", "los angeles", "san francisco"]):
+        return pick(["UA", "DL", "AA", "BA", "LH", "AF", "EK"])
+
+    if any(token in route_text for token in ["japan", "tokyo", "singapore", "bangkok", "kuala lumpur", "hong kong"]):
+        return pick(["JL", "NH", "SQ", "TK", "EK", "QR"])
+
+    fallback_codes = ["LH", "EK", "TK", "QR", "BA", "UA", "AF", "DL"]
+    selected = pick(fallback_codes)
+    if selected:
+        return selected
+
+    return list(AIRLINE_NAMES.items())
+
 
 def _estimate_price_range_inr(origin_city: str, destination_city: str) -> Tuple[int, int]:
     origin = origin_city.lower()
@@ -115,12 +187,10 @@ def _generate_synthetic_flights(
     currency: str,
     price_range: Tuple[int, int]
 ) -> List[Dict]:
-    """Generate diverse flight options with realistic pricing variations."""
+    """Generate diverse flight options with realistic pricing and common airlines."""
     base_low, base_high = price_range
-    
-    # Select 4-5 random airlines from the pool
-    airlines_list = list(AIRLINE_NAMES.items())
-    selected_airlines = random.sample(airlines_list, min(5, len(airlines_list)))
+
+    selected_airlines = _common_airlines_for_route(origin_city, destination_city)
     
     flights = []
     
@@ -131,11 +201,6 @@ def _generate_synthetic_flights(
         (base_low + (base_high - base_low) * 0.5, base_low + (base_high - base_low) * 0.7),   # Standard
         (base_low + (base_high - base_low) * 0.75, base_high),         # Premium
     ]
-    
-    try:
-        dep_date_obj = datetime.strptime(departure_date, "%Y-%m-%d")
-    except:
-        dep_date_obj = datetime.utcnow() + timedelta(days=30)
     
     for idx, (price_low, price_high) in enumerate(price_points):
         seed_val = idx + hash(origin_iata + destination_iata) % 1000
@@ -159,9 +224,8 @@ def _generate_synthetic_flights(
         stops = random.choice([0, 0, 0, 1, 1, 2])  # Favor direct flights
         
         # Price varies by tier
-        price = random.uniform(price_low, price_high)
-        if currency != "INR":
-            price = price * 0.012  # Rough conversion if needed
+        price_inr = random.uniform(price_low, price_high)
+        price = _convert_inr_amount(price_inr, currency)
         
         flights.append({
             "airline": airline_name,
@@ -175,6 +239,9 @@ def _generate_synthetic_flights(
             "price": round(price, 2),
             "currency": currency,
             "route": f"{origin_iata} -> {destination_iata}",
+            "sourceTitle": "Common carriers for this route",
+            "sourceUrl": "",
+            "sourceSnippet": f"Representative airlines for {origin_city} to {destination_city}",
         })
     
     return flights
@@ -225,20 +292,39 @@ def _search_web_for_flights(
     if not raw_sources:
         return []
 
-    price_range = _estimate_price_range_inr(origin_label, destination_label)
     offers: List[Dict] = []
+    preferred_airlines = _common_airlines_for_route(origin_label, destination_label)
+    preferred_codes = {code for code, _ in preferred_airlines}
+    used_airline_codes: set[str] = set()
+    price_range = _estimate_price_range_inr(origin_label, destination_label)
     for idx in range(4):
         source = raw_sources[idx % len(raw_sources)]
         source_text = f"{source['title']} {source['snippet']}"
-        airline_code, airline_name = _pick_airline_from_text(source_text)
+        generic_source = source.get("title") == "Bing web search result"
+        if generic_source:
+            airline_code, airline_name = preferred_airlines[idx % len(preferred_airlines)]
+        else:
+            airline_code, airline_name = _pick_airline_from_text(source_text)
+
+        if preferred_airlines and airline_code not in preferred_codes:
+            airline_code, airline_name = preferred_airlines[idx % len(preferred_airlines)]
+
+        if airline_code in used_airline_codes and preferred_airlines:
+            for code, name in preferred_airlines:
+                if code not in used_airline_codes:
+                    airline_code, airline_name = code, name
+                    break
+        used_airline_codes.add(airline_code)
         seed = int(hashlib.sha256(f"{origin_label}-{destination_label}-{departure_date}-{idx}".encode("utf-8")).hexdigest(), 16)
         random.seed(seed)
 
         price_value = float(source.get("min_price") or 0.0)
-        if price_value <= 0:
-            price_value = random.uniform(price_range[0], price_range[1])
-            if source.get("currency") and source["currency"] != currency:
-                price_value = price_value * 0.012
+        source_currency = source.get("currency") or currency
+        if not _is_reasonable_flight_price(price_value, source_currency):
+            tier_low = price_range[0] + (idx * 0.2 * (price_range[1] - price_range[0]))
+            tier_high = price_range[0] + ((idx + 1) * 0.2 * (price_range[1] - price_range[0]))
+            price_value = _convert_inr_amount(random.uniform(tier_low, tier_high), currency)
+            source_currency = currency
 
         departure_hour = random.randint(6, 22)
         departure_minute = random.randint(0, 59)
@@ -259,7 +345,7 @@ def _search_web_for_flights(
                 "durationMinutes": duration_minutes,
                 "stops": stops,
                 "price": round(price_value, 2),
-                "currency": source.get("currency", currency),
+                "currency": source_currency,
                 "route": f"{origin_label} -> {destination_label}",
                 "sourceTitle": source.get("title", "Web search result"),
                 "sourceUrl": source.get("url", ""),
@@ -366,6 +452,9 @@ def _location_candidates(value: str) -> List[str]:
 
 def _pick_airline_from_text(text: str) -> Tuple[str, str]:
     lower_text = (text or "").lower()
+    if any(keyword in lower_text for keyword in CARGO_KEYWORDS):
+        lower_text = ""
+
     for code, name in AIRLINE_NAMES.items():
         if name.lower() in lower_text:
             return code, name

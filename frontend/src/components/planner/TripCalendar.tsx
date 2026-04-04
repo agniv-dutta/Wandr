@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+﻿import React, { useMemo, useState } from 'react';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { enUS } from 'date-fns/locale';
@@ -150,7 +150,7 @@ export const TripCalendar: React.FC<TripCalendarProps> = ({ destination, duratio
         </button>
       </div>
 
-      <div className="wandr-calendar rounded-2xl border border-zinc-700/70 bg-zinc-950/40 p-3">
+      <div className="musafir-calendar rounded-2xl border border-zinc-700/70 bg-zinc-950/40 p-3">
         <Calendar
           localizer={localizer}
           events={calendarEvents}
@@ -218,3 +218,4 @@ export const TripCalendar: React.FC<TripCalendarProps> = ({ destination, duratio
     </div>
   );
 };
+

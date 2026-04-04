@@ -1,4 +1,4 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -22,13 +22,13 @@
     display: none;
   }
 
-  .wandr-calendar .rbc-toolbar {
+  .musafir-calendar .rbc-toolbar {
     margin-bottom: 0.85rem;
     border-bottom: 1px solid rgba(63, 63, 70, 0.7);
     padding-bottom: 0.75rem;
   }
 
-  .wandr-calendar .rbc-toolbar button {
+  .musafir-calendar .rbc-toolbar button {
     border: 1px solid rgba(82, 82, 91, 0.9);
     color: rgb(228, 228, 231);
     background: rgba(39, 39, 42, 0.8);
@@ -36,33 +36,33 @@
     transition: all 0.2s ease;
   }
 
-  .wandr-calendar .rbc-toolbar button:hover,
-  .wandr-calendar .rbc-toolbar button:focus {
+  .musafir-calendar .rbc-toolbar button:hover,
+  .musafir-calendar .rbc-toolbar button:focus {
     background: rgba(124, 58, 237, 0.25);
     border-color: rgba(139, 92, 246, 0.8);
     color: rgb(245, 243, 255);
   }
 
-  .wandr-calendar .rbc-toolbar button.rbc-active {
+  .musafir-calendar .rbc-toolbar button.rbc-active {
     background: rgba(124, 58, 237, 0.35);
     border-color: rgba(167, 139, 250, 0.95);
     color: white;
   }
 
-  .wandr-calendar .rbc-toolbar-label {
+  .musafir-calendar .rbc-toolbar-label {
     color: rgb(250, 250, 250);
     font-weight: 700;
     letter-spacing: 0.01em;
   }
 
-  .wandr-calendar .rbc-month-view {
+  .musafir-calendar .rbc-month-view {
     border: 1px solid rgba(63, 63, 70, 0.85);
     border-radius: 0.85rem;
     overflow: hidden;
     background: rgba(9, 9, 11, 0.55);
   }
 
-  .wandr-calendar .rbc-header {
+  .musafir-calendar .rbc-header {
     border-bottom: 1px solid rgba(82, 82, 91, 0.8);
     border-right: 1px solid rgba(63, 63, 70, 0.75);
     color: rgb(212, 212, 216);
@@ -71,34 +71,35 @@
     padding: 0.45rem 0.25rem;
   }
 
-  .wandr-calendar .rbc-header:last-child {
+  .musafir-calendar .rbc-header:last-child {
     border-right: 0;
   }
 
-  .wandr-calendar .rbc-day-bg {
+  .musafir-calendar .rbc-day-bg {
     background: rgba(9, 9, 11, 0.45);
     border-right: 1px solid rgba(63, 63, 70, 0.7);
   }
 
-  .wandr-calendar .rbc-month-row + .rbc-month-row {
+  .musafir-calendar .rbc-month-row + .rbc-month-row {
     border-top: 1px solid rgba(63, 63, 70, 0.7);
   }
 
-  .wandr-calendar .rbc-off-range-bg {
+  .musafir-calendar .rbc-off-range-bg {
     background: rgba(39, 39, 42, 0.45);
   }
 
-  .wandr-calendar .rbc-date-cell {
+  .musafir-calendar .rbc-date-cell {
     color: rgb(212, 212, 216);
     padding: 0.25rem 0.35rem;
   }
 
-  .wandr-calendar .rbc-date-cell.rbc-now {
+  .musafir-calendar .rbc-date-cell.rbc-now {
     color: rgb(196, 181, 253);
     font-weight: 700;
   }
 
-  .wandr-calendar .rbc-event {
+  .musafir-calendar .rbc-event {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   }
 }
+

@@ -157,7 +157,11 @@ export interface GroundTransportOption {
   journeyTime: string;
   priceRange: string;
   frequency: string;
+  operator?: string;
   source: 'live' | 'estimated' | string;
+  sourceTitle?: string;
+  sourceUrl?: string;
+  sourceSnippet?: string;
   minPrice?: number;
   durationHours?: number;
 }

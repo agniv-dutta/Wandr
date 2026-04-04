@@ -218,22 +218,50 @@ export const TransportPanel: React.FC<TransportPanelProps> = ({ origin, destinat
       );
     }
 
-    const option = section.options[0];
-    if (!option) {
+    const options = section.options || [];
+    if (!options.length) {
       return <div className="text-sm text-zinc-400">No {mode} options available.</div>;
     }
 
     return (
-      <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-4">
-        <div className="flex items-center justify-between">
-          <p className="font-semibold text-zinc-100">{mode === 'train' ? 'Train' : 'Bus'} option</p>
-          <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[11px] text-amber-300">Estimated</span>
-        </div>
-        <div className="mt-3 space-y-2 text-sm text-zinc-300">
-          <p>Journey time: {option.journeyTime}</p>
-          <p>Price range: {option.priceRange}</p>
-          <p>Frequency: {option.frequency}</p>
-        </div>
+      <div className="space-y-3">
+        {options.slice(0, 3).map((option, idx) => (
+          <div key={`${mode}-${idx}-${option.operator || 'operator'}`} className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-4">
+            <div className="flex items-center justify-between">
+              <p className="font-semibold text-zinc-100">
+                {option.operator || (mode === 'train' ? 'Train operator' : 'Bus operator')}
+              </p>
+              <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[11px] text-amber-300">
+                {option.source === 'web_search' ? 'Web search' : 'Estimated'}
+              </span>
+            </div>
+            <div className="mt-3 space-y-2 text-sm text-zinc-300">
+              <p>Journey time: {option.journeyTime}</p>
+              <p>Price range: {option.priceRange}</p>
+              <p>Frequency: {option.frequency}</p>
+            </div>
+            {(option.sourceTitle || option.sourceUrl) && (
+              <div className="mt-3 rounded-lg border border-zinc-700/70 bg-zinc-950/40 px-3 py-2 text-xs text-zinc-400">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="truncate">
+                    Web result: {option.sourceTitle || 'Ground transport search result'}
+                  </span>
+                  {option.sourceUrl && (
+                    <a
+                      href={option.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="shrink-0 text-violet-300 hover:text-violet-200"
+                    >
+                      Open source
+                    </a>
+                  )}
+                </div>
+                {option.sourceSnippet && <p className="mt-1 line-clamp-2 text-zinc-500">{option.sourceSnippet}</p>}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     );
   };

@@ -1,13 +1,13 @@
-# Wandr Frontend - AI-Powered Travel Planning
+﻿# Musafir Frontend - AI-Powered Travel Planning
 
-A production-quality React + TypeScript + Tailwind CSS frontend for the Wandr travel planning application.
+A production-quality React + TypeScript + Tailwind CSS frontend for the Musafir travel planning application.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 - Node.js 16+ and npm/yarn
-- The Wandr backend running on `http://localhost:8000`
+- The Musafir backend running on `http://localhost:8000`
 
 ### Installation
 
@@ -31,54 +31,54 @@ npm run build
 npm run preview
 ```
 
-## 📁 Project Structure
+## ðŸ“ Project Structure
 
 ```
 frontend/
-├── public/
-├── src/
-│   ├── api/
-│   │   └── travel.ts              # Axios API client with all backend calls
-│   ├── components/
-│   │   ├── layout/
-│   │   │   ├── Navbar.tsx         # Navigation header
-│   │   │   └── Footer.tsx         # Footer component
-│   │   ├── home/
-│   │   │   ├── Hero.tsx           # Hero section with CTA
-│   │   │   └── FeatureCards.tsx   # Feature showcase cards
-│   │   ├── planner/
-│   │   │   ├── TripForm.tsx       # Trip planning form
-│   │   │   ├── ResultPanel.tsx    # Results container with tabs
-│   │   │   ├── ItineraryTab.tsx   # Day-by-day itinerary view
-│   │   │   ├── WeatherTab.tsx     # 7-day weather forecast
-│   │   │   ├── CurrencyTab.tsx    # Currency conversion
-│   │   │   ├── DestinationTab.tsx # Destination information
-│   │   │   └── AgentTraceTab.tsx  # ReAct agent reasoning trace
-│   │   └── ui/
-│   │       ├── Button.tsx         # Reusable button component
-│   │       ├── Card.tsx           # Glassmorphism card
-│   │       ├── Spinner.tsx        # Loading spinner
-│   │       ├── Badge.tsx          # Status badges
-│   │       └── TabBar.tsx         # Navigation tabs
-│   ├── hooks/
-│   │   └── useTripPlanner.ts      # Custom hook for trip planning logic
-│   ├── pages/
-│   │   ├── HomePage.tsx           # Home page (/)
-│   │   └── PlannerPage.tsx        # Planner page (/plan)
-│   ├── types/
-│   │   └── index.ts               # TypeScript interfaces
-│   ├── App.tsx                    # Main app component with routing
-│   ├── main.tsx                   # Entry point
-│   └── index.css                  # Tailwind directives
-├── index.html
-├── package.json
-├── tailwind.config.ts
-├── tsconfig.json
-├── vite.config.ts
-└── postcss.config.js
+â”œâ”€â”€ public/
+â”œâ”€â”€ src/
+â”‚   â”œâ”€â”€ api/
+â”‚   â”‚   â””â”€â”€ travel.ts              # Axios API client with all backend calls
+â”‚   â”œâ”€â”€ components/
+â”‚   â”‚   â”œâ”€â”€ layout/
+â”‚   â”‚   â”‚   â”œâ”€â”€ Navbar.tsx         # Navigation header
+â”‚   â”‚   â”‚   â””â”€â”€ Footer.tsx         # Footer component
+â”‚   â”‚   â”œâ”€â”€ home/
+â”‚   â”‚   â”‚   â”œâ”€â”€ Hero.tsx           # Hero section with CTA
+â”‚   â”‚   â”‚   â””â”€â”€ FeatureCards.tsx   # Feature showcase cards
+â”‚   â”‚   â”œâ”€â”€ planner/
+â”‚   â”‚   â”‚   â”œâ”€â”€ TripForm.tsx       # Trip planning form
+â”‚   â”‚   â”‚   â”œâ”€â”€ ResultPanel.tsx    # Results container with tabs
+â”‚   â”‚   â”‚   â”œâ”€â”€ ItineraryTab.tsx   # Day-by-day itinerary view
+â”‚   â”‚   â”‚   â”œâ”€â”€ WeatherTab.tsx     # 7-day weather forecast
+â”‚   â”‚   â”‚   â”œâ”€â”€ CurrencyTab.tsx    # Currency conversion
+â”‚   â”‚   â”‚   â”œâ”€â”€ DestinationTab.tsx # Destination information
+â”‚   â”‚   â”‚   â””â”€â”€ AgentTraceTab.tsx  # ReAct agent reasoning trace
+â”‚   â”‚   â””â”€â”€ ui/
+â”‚   â”‚       â”œâ”€â”€ Button.tsx         # Reusable button component
+â”‚   â”‚       â”œâ”€â”€ Card.tsx           # Glassmorphism card
+â”‚   â”‚       â”œâ”€â”€ Spinner.tsx        # Loading spinner
+â”‚   â”‚       â”œâ”€â”€ Badge.tsx          # Status badges
+â”‚   â”‚       â””â”€â”€ TabBar.tsx         # Navigation tabs
+â”‚   â”œâ”€â”€ hooks/
+â”‚   â”‚   â””â”€â”€ useTripPlanner.ts      # Custom hook for trip planning logic
+â”‚   â”œâ”€â”€ pages/
+â”‚   â”‚   â”œâ”€â”€ HomePage.tsx           # Home page (/)
+â”‚   â”‚   â””â”€â”€ PlannerPage.tsx        # Planner page (/plan)
+â”‚   â”œâ”€â”€ types/
+â”‚   â”‚   â””â”€â”€ index.ts               # TypeScript interfaces
+â”‚   â”œâ”€â”€ App.tsx                    # Main app component with routing
+â”‚   â”œâ”€â”€ main.tsx                   # Entry point
+â”‚   â””â”€â”€ index.css                  # Tailwind directives
+â”œâ”€â”€ index.html
+â”œâ”€â”€ package.json
+â”œâ”€â”€ tailwind.config.ts
+â”œâ”€â”€ tsconfig.json
+â”œâ”€â”€ vite.config.ts
+â””â”€â”€ postcss.config.js
 ```
 
-## 🎨 Design System
+## ðŸŽ¨ Design System
 
 ### Colors
 - **Primary**: Violet (600) to Indigo (600) gradient
@@ -100,7 +100,7 @@ frontend/
 - Animations: Smooth transitions with Framer Motion
 - Dark theme only
 
-## 🔌 API Integration
+## ðŸ”Œ API Integration
 
 The frontend communicates with the backend via Axios at `http://localhost:8000`.
 
@@ -129,7 +129,7 @@ GET /api/currency?from=INR&to=JPY&amount=150000
 GET /api/destination?name=Tokyo
 ```
 
-## 📦 Dependencies
+## ðŸ“¦ Dependencies
 
 ### Core
 - **React 18**: UI framework
@@ -145,7 +145,7 @@ GET /api/destination?name=Tokyo
 - **Framer Motion**: Animations and interactions
 - **Lucide React**: Icon library
 
-## 🎬 Key Features
+## ðŸŽ¬ Key Features
 
 ### Pages
 
@@ -179,7 +179,7 @@ GET /api/destination?name=Tokyo
 - Loading skeleton states
 - Floating emoji animations
 
-## 🔧 Configuration
+## ðŸ”§ Configuration
 
 ### Environment Variables
 
@@ -196,7 +196,7 @@ Custom colors and animations configured in `tailwind.config.ts`:
 - Custom animation (float effect)
 - Responsive breakpoints (mobile-first)
 
-## 🚀 Running Both Frontend and Backend
+## ðŸš€ Running Both Frontend and Backend
 
 ### Terminal 1: Backend (FastAPI)
 ```bash
@@ -214,13 +214,13 @@ npm run dev
 
 The frontend will be available at `http://localhost:5173`
 
-## 📱 Responsive Design
+## ðŸ“± Responsive Design
 
 - **Mobile** (<640px): Single column, stacked components
 - **Tablet** (640-1024px): 2-column feature cards
 - **Desktop** (>1024px): Full 2-column planner layout, all features visible
 
-## 🎨 Customization
+## ðŸŽ¨ Customization
 
 ### Change Primary Colors
 Edit `tailwind.config.ts`:
@@ -241,7 +241,7 @@ Edit `src/components/planner/TripForm.tsx` to add/remove fields
 2. Add to `ResultPanel.tsx` tabs array
 3. Add AnimatePresence case
 
-## 🐛 Debugging
+## ðŸ› Debugging
 
 ### API Errors
 - Check backend is running on port 8000
@@ -259,7 +259,7 @@ Edit `src/components/planner/TripForm.tsx` to add/remove fields
 - Check TypeScript types in `src/types/index.ts`
 - Verify all imports are correct
 
-## 📝 Notes
+## ðŸ“ Notes
 
 - All components are fully functional with no placeholder code
 - TypeScript strict mode is enabled for type safety
@@ -267,7 +267,7 @@ Edit `src/components/planner/TripForm.tsx` to add/remove fields
 - Responsive design tested on mobile, tablet, and desktop
 - Animations use Framer Motion for smooth performance
 
-## 🤝 Backend Integration
+## ðŸ¤ Backend Integration
 
 The frontend expects the backend to provide:
 
@@ -279,7 +279,7 @@ The frontend expects the backend to provide:
 
 If running without the full LangChain agent, the `backend/server.py` provides mock data fallbacks.
 
-## 📚 Additional Resources
+## ðŸ“š Additional Resources
 
 - [React Documentation](https://react.dev)
 - [Tailwind CSS](https://tailwindcss.com)
@@ -289,4 +289,5 @@ If running without the full LangChain agent, the `backend/server.py` provides mo
 
 ---
 
-Built with ❤️ for the Wandr travel planning platform.
+Built with â¤ï¸ for the Musafir travel planning platform.
+

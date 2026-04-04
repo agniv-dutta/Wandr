@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 export const Footer: React.FC = () => {
   return (
@@ -8,7 +8,7 @@ export const Footer: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className="text-2xl">✈</span>
             <span className="text-xl font-bold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
-              Wandr
+              Musafir
             </span>
           </div>
           <p className="text-zinc-400 text-sm">
@@ -25,3 +25,4 @@ export const Footer: React.FC = () => {
     </footer>
   );
 };
+

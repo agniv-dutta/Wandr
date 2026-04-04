@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -60,7 +60,7 @@ export const Hero: React.FC = () => {
           variants={itemVariants}
           className="text-zinc-400 text-lg sm:text-xl max-w-2xl mx-auto mb-12 leading-relaxed"
         >
-          Tell Wandr where you want to go. Our AI agent researches destinations, checks live weather, converts your budget, and builds a day-by-day itinerary — all in seconds.
+          Tell Musafir where you want to go. Our AI agent researches destinations, checks live weather, converts your budget, and builds a day-by-day itinerary — all in seconds.
         </motion.p>
 
         {/* CTA Buttons */}
@@ -86,7 +86,7 @@ export const Hero: React.FC = () => {
             <p className="text-sm font-medium">Powered by Groq</p>
           </div>
           <div className="text-zinc-400">
-            <p className="text-2xl mb-2">🔓</p>
+            <p className="text-2xl mb-2">🗓</p>
             <p className="text-sm font-medium">100% Free APIs</p>
           </div>
         </motion.div>
@@ -94,3 +94,4 @@ export const Hero: React.FC = () => {
     </div>
   );
 };
+

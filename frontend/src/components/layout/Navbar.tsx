@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { Menu, X } from 'lucide-react';
@@ -15,7 +15,7 @@ export const Navbar: React.FC = () => {
           <Link to="/" className="flex items-center gap-2 group">
             <span className="text-3xl">✈</span>
             <span className="text-2xl font-black bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent group-hover:scale-105 transition-transform duration-300">
-              Wandr
+              Musafir
             </span>
           </Link>
 
@@ -79,3 +79,4 @@ export const Navbar: React.FC = () => {
     </nav>
   );
 };
+
