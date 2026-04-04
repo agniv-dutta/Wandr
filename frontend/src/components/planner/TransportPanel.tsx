@@ -110,9 +110,17 @@ export const TransportPanel: React.FC<TransportPanelProps> = ({ origin, destinat
     }
 
     if (!data?.flights?.length) {
+      const routeLabel = data?.routeResolved?.originIata && data?.routeResolved?.destinationIata
+        ? `${data.routeResolved.originIata} -> ${data.routeResolved.destinationIata}`
+        : `${origin} -> ${destination}`;
       return (
-        <div className="text-sm text-zinc-400">
-          {data?.flightMessage || 'Live flight pricing unavailable for this route/date.'}
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
+          <p className="font-medium">Live flight fares are unavailable for this route/date.</p>
+          <p className="mt-1 text-amber-200/90">Resolved route: {routeLabel}</p>
+          <p className="mt-1 text-amber-200/90">
+            {data?.flightMessage || 'The free provider did not return priced results for the selected day.'}
+          </p>
+          <p className="mt-2 text-amber-200/80">Try adjusting the date by 1-3 days or selecting a nearby major city airport.</p>
         </div>
       );
     }

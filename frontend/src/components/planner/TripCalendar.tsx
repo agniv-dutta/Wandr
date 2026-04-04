@@ -5,6 +5,7 @@ import { enUS } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { travelApi, API_BASE_URL } from '../../api/travel';
 import { motion } from 'framer-motion';
+import { CalendarDays } from 'lucide-react';
 
 const locales = {
   'en-US': enUS,
@@ -129,43 +130,68 @@ export const TripCalendar: React.FC<TripCalendarProps> = ({ destination, duratio
   };
 
   return (
-    <div className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-6 space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="bg-gradient-to-b from-zinc-900/80 to-zinc-900/60 border border-zinc-800 rounded-2xl p-6 space-y-5 shadow-[0_10px_40px_rgba(0,0,0,0.35)]">
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <h3 className="text-xl font-bold text-zinc-50">Trip Calendar</h3>
-          <p className="text-sm text-zinc-400">Visualize your trip schedule</p>
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/20 text-violet-300">
+              <CalendarDays size={16} />
+            </span>
+            <h3 className="text-xl font-bold text-zinc-50">Trip Calendar</h3>
+          </div>
+          <p className="text-sm text-zinc-400 mt-1">Visualize your trip schedule</p>
         </div>
         <button
           onClick={handleExport}
           disabled={downloading}
-          className="px-4 py-2 bg-orange-500 text-white rounded-xl text-sm font-semibold hover:bg-orange-400 transition"
+          className="px-4 py-2 bg-orange-500 text-white rounded-xl text-sm font-semibold hover:bg-orange-400 transition disabled:opacity-60"
         >
           {downloading ? 'Generating...' : '📅 Add to Calendar'}
         </button>
       </div>
 
-      <Calendar
-        localizer={localizer}
-        events={calendarEvents}
-        startAccessor="start"
-        endAccessor="end"
-        style={{ height: 360 }}
-        views={['month']}
-        onSelectEvent={(event: TripCalendarEvent) => {
-          if (event.title.startsWith('Trip')) {
-            setSelectedDay(null);
-          } else {
-            const dayIndex = parsedEvents.find(e => e.title === event.title)?.day || null;
-            setSelectedDay(dayIndex);
-          }
-        }}
-        eventPropGetter={(event: TripCalendarEvent) => {
-          if (event.title.startsWith('Trip')) {
-            return { className: 'bg-orange-500 text-white border-0' };
-          }
-          return { className: 'bg-violet-500 text-white border-0' };
-        }}
-      />
+      <div className="wandr-calendar rounded-2xl border border-zinc-700/70 bg-zinc-950/40 p-3">
+        <Calendar
+          localizer={localizer}
+          events={calendarEvents}
+          startAccessor="start"
+          endAccessor="end"
+          style={{ height: 390 }}
+          views={['month']}
+          onSelectEvent={(event: TripCalendarEvent) => {
+            if (event.title.startsWith('Trip')) {
+              setSelectedDay(null);
+            } else {
+              const dayIndex = parsedEvents.find(e => e.title === event.title)?.day || null;
+              setSelectedDay(dayIndex);
+            }
+          }}
+          eventPropGetter={(event: TripCalendarEvent) => {
+            if (event.title.startsWith('Trip')) {
+              return {
+                style: {
+                  backgroundColor: '#f97316',
+                  border: 0,
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontWeight: 700,
+                  padding: '2px 8px',
+                },
+              };
+            }
+            return {
+              style: {
+                backgroundColor: '#7c3aed',
+                border: 0,
+                borderRadius: '8px',
+                color: '#fff',
+                fontWeight: 600,
+                padding: '2px 8px',
+              },
+            };
+          }}
+        />
+      </div>
 
       {selectedDay && eventsByDay[selectedDay] && (
         <motion.div
@@ -173,7 +199,12 @@ export const TripCalendar: React.FC<TripCalendarProps> = ({ destination, duratio
           animate={{ opacity: 1, y: 0 }}
           className="bg-zinc-800/60 border border-zinc-700 rounded-xl p-4"
         >
-          <h4 className="text-sm font-semibold text-zinc-200 mb-3">Day {selectedDay} Itinerary</h4>
+          <h4 className="text-sm font-semibold text-zinc-200 mb-3">
+            <span className="inline-flex items-center rounded-full bg-violet-500/20 text-violet-200 px-2.5 py-1 mr-2">
+              Day {selectedDay}
+            </span>
+            Itinerary
+          </h4>
           <div className="space-y-2">
             {eventsByDay[selectedDay].map((event, index) => (
               <div key={index} className="text-sm text-zinc-300">

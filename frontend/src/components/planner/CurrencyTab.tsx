@@ -7,6 +7,8 @@ import { motion } from 'framer-motion';
 
 interface CurrencyTabProps {
   destination: string;
+  budgetCurrency: string;
+  budgetAmount: number;
 }
 
 const currencySymbols: Record<string, string> = {
@@ -22,11 +24,44 @@ const currencySymbols: Record<string, string> = {
 
 const commonAmounts = [100, 500, 1000, 5000, 10000];
 
-export const CurrencyTab: React.FC<CurrencyTabProps> = ({ destination }) => {
+export const CurrencyTab: React.FC<CurrencyTabProps> = ({ destination, budgetCurrency, budgetAmount }) => {
   const [conversion, setConversion] = useState<CurrencyConversion | null>(null);
   const [conversionTable, setConversionTable] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const inferCurrencyCode = (raw: string): string | null => {
+    if (!raw) return null;
+
+    const exact = raw.trim().toUpperCase();
+    if (/^[A-Z]{3}$/.test(exact)) return exact;
+
+    const codeMatch = raw.match(/\b([A-Z]{3})\b/);
+    if (codeMatch?.[1]) return codeMatch[1].toUpperCase();
+
+    const lower = raw.toLowerCase();
+    const aliases: Record<string, string> = {
+      euro: 'EUR',
+      dollar: 'USD',
+      usd: 'USD',
+      aud: 'AUD',
+      rupee: 'INR',
+      inr: 'INR',
+      yen: 'JPY',
+      jpy: 'JPY',
+      pound: 'GBP',
+      gbp: 'GBP',
+      baht: 'THB',
+      thb: 'THB',
+      sgd: 'SGD',
+    };
+
+    for (const [needle, code] of Object.entries(aliases)) {
+      if (lower.includes(needle)) return code;
+    }
+
+    return null;
+  };
 
   useEffect(() => {
     const fetchCurrency = async () => {
@@ -34,16 +69,21 @@ export const CurrencyTab: React.FC<CurrencyTabProps> = ({ destination }) => {
         setLoading(true);
         setError(null);
 
-        // Get conversion data - for demo, assume INR to USD
-        const data = await travelApi.convertCurrency('INR', 'USD', 150000);
+        const destinationInfo = await travelApi.getDestination(destination);
+        const fromCurrency = (budgetCurrency || 'USD').toUpperCase();
+        const toCurrency = inferCurrencyCode(destinationInfo.currency) || 'USD';
+
+        const data = await travelApi.convertCurrency(fromCurrency, toCurrency, budgetAmount || 0);
         setConversion(data);
 
-        // Generate conversion table
-        const table: Record<number, number> = {};
-        for (const amount of commonAmounts) {
-          const converted = await travelApi.convertCurrency('INR', 'USD', amount);
-          table[amount] = converted.converted;
-        }
+        const tableEntries = await Promise.all(
+          commonAmounts.map(async amount => {
+            const converted = await travelApi.convertCurrency(fromCurrency, toCurrency, amount);
+            return [amount, converted.converted] as const;
+          })
+        );
+
+        const table: Record<number, number> = Object.fromEntries(tableEntries);
         setConversionTable(table);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch currency data');
@@ -53,7 +93,7 @@ export const CurrencyTab: React.FC<CurrencyTabProps> = ({ destination }) => {
     };
 
     fetchCurrency();
-  }, [destination]);
+  }, [destination, budgetCurrency, budgetAmount]);
 
   if (loading) {
     return (

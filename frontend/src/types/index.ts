@@ -64,6 +64,32 @@ export interface FoodEstimate {
   sources: string[];
 }
 
+export interface FoodDayMeal {
+  amount: number;
+  suggestion: string;
+}
+
+export interface FoodDayPlanItem {
+  day: number;
+  theme: string;
+  context: string;
+  breakfast: FoodDayMeal;
+  lunch: FoodDayMeal;
+  dinner: FoodDayMeal;
+  daily_total: number;
+  nearby_source?: string;
+}
+
+export interface FoodDayPlan {
+  city: string;
+  currency: string;
+  days: FoodDayPlanItem[];
+  daily_average: number;
+  total_food_cost: number;
+  notes: string;
+  sources: string[];
+}
+
 export interface BudgetBreakdown {
   transport: { amount: number; mode: string; currency: string };
   accommodation: { amount: number; per_night: number; nights: number; currency: string };
@@ -141,6 +167,12 @@ export interface TransportOverviewResponse {
   flights: FlightOffer[];
   flightSource?: string;
   flightMessage?: string;
+  routeResolved?: {
+    originCity?: string;
+    destinationCity?: string;
+    originIata?: string;
+    destinationIata?: string;
+  };
   trains: TransportModeResponse;
   buses: TransportModeResponse;
   bestValue: 'flight' | 'train' | 'bus' | null;

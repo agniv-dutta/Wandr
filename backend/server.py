@@ -73,6 +73,14 @@ class FoodRequest(BaseModel):
     days: int
     budget_level: str
 
+
+class FoodDayPlanRequest(BaseModel):
+    city: str
+    country: Optional[str] = ""
+    days: int
+    budget_level: str
+    itinerary_days: Optional[List[str]] = None
+
 class BudgetRequest(BaseModel):
     destination: str
     origin: str
@@ -196,6 +204,198 @@ def _has_structured_itinerary(text: str) -> bool:
         return False
 
     return bool(re.search(r"(?:^|\n)(?:\*\*)?(?:#+\s*)?Day\s+1\b", text, flags=re.IGNORECASE))
+
+
+def _dynamic_itinerary_from_context(
+    destination: str,
+    duration: int,
+    budget_level: str,
+    travel_style: str,
+    constraints: str,
+    source_text: str,
+) -> str:
+    """Build a structured itinerary with actual tourist spots and attractions based on travel style."""
+    
+    # Common attractions organized by travel style
+    STYLE_ACTIVITIES = {
+        "Cultural": {
+            "morning": [
+                "Visit the central historic district and explore local museums",
+                "Take a guided heritage tour of temples and historical sites",
+                "Explore ancient ruins and archaeological landmarks",
+                "Visit art galleries and cultural centers",
+                "Tour the city's oldest neighborhoods and heritage quarters"
+            ],
+            "afternoon": [
+                "Attend a local heritage walk or cultural exhibition",
+                "Visit a traditional craft workshop or artisan market",
+                "Explore local libraries and cultural institutions",
+                "Tour historic palaces or royal structures",
+                "Visit cultural performance venues"
+            ],
+            "evening": [
+                "Watch traditional dance or music performance",
+                "Enjoy dinner at a heritage restaurant with local cuisine",
+                "Take an evening walk through historic plazas and monuments",
+                "Attend a traditional ceremony or festival if available",
+                "Visit illuminated historical sites"
+            ]
+        },
+        "Beach": {
+            "morning": [
+                "Sunrise beach walk along pristine shorelines",
+                "Water sports: snorkeling or paddleboarding",
+                "Beach yoga or meditation session",
+                "Explore hidden coves and coastal attractions",
+                "Visit beach markets and local seaside shops"
+            ],
+            "afternoon": [
+                "Relax on the beach with swimming and sunbathing",
+                "Island hopping or boat tours along the coast",
+                "Beachside dining and fresh seafood lunch",
+                "Explore nearby resorts and beach clubs",
+                "Visit coastal hiking trails with ocean views"
+            ],
+            "evening": [
+                "Sunset beach dinner with ocean views",
+                "Beach cocktail bars and seaside entertainment",
+                "Bonfire or beach party experience",
+                "Night swimming or beach stargazing",
+                "Beachfront nightlife and clubs"
+            ]
+        },
+        "Adventure": {
+            "morning": [
+                "Hiking up local mountains or scenic peaks",
+                "Rock climbing or bouldering at adventure parks",
+                "Early start on trekking trails with scenic overlooks",
+                "Off-road exploration and adventure sports",
+                "Zip-lining or canopy tours through forests"
+            ],
+            "afternoon": [
+                "Caving or underground exploration",
+                "White water rafting or kayaking",
+                "Mountain biking on diverse terrain",
+                "Paragliding or hot air balloon rides",
+                "Rock rappelling and climbing expeditions"
+            ],
+            "evening": [
+                "Campfire and outdoor cooking experience",
+                "Night trekking or stargazing adventure",
+                "Adventure lodge with local outdoor guides",
+                "Bonfire gatherings and outdoor storytelling",
+                "Evening wildlife tours"
+            ]
+        },
+        "Food & Nightlife": {
+            "morning": [
+                "Visit local food markets and street food stalls",
+                "Cooking class with local chef learning regional dishes",
+                "Food market tour with tastings and vendor stories",
+                "Breakfast at popular local cafes and bakeries",
+                "Visit a farmers market for fresh local produce"
+            ],
+            "afternoon": [
+                "Brewery or winery tour with tastings",
+                "Food truck tours and street food exploration",
+                "Restaurant hop for traditional lunch specialties",
+                "Pastry or chocolate making workshops",
+                "Visit food museums or culinary centers"
+            ],
+            "evening": [
+                "Dinner at award-winning local restaurants",
+                "Nightclub and bar hopping with craft cocktails",
+                "Late-night street food and night market exploration",
+                "Live music venues and entertainment districts",
+                "Private dining experiences with local hosts"
+            ]
+        },
+        "Shopping": {
+            "morning": [
+                "Explore local markets and bazaars for authentic goods",
+                "Visit independent boutiques and local designers",
+                "Morning shopping at antique markets and vintage shops",
+                "Browse artisan workshops and craft shops",
+                "Department store and mall exploration"
+            ],
+            "afternoon": [
+                "Shopping district exploration with street vendors",
+                "Designer boutiques and upscale commercial areas",
+                "Souvenir and gift shops in tourist districts",
+                "Flea markets and collectibles hunting",
+                "Haggling at local markets and bazaars"
+            ],
+            "evening": [
+                "Evening shopping and dining districts",
+                "Night markets with street food and shopping",
+                "Shopping mall entertainment and dining",
+                "Local brand flagship stores with evening events",
+                "Bazaar exploration under evening lights"
+            ]
+        },
+        "Balanced": {
+            "morning": [
+                "Guided city tour covering main attractions and history",
+                "Visit local museums and cultural sites",
+                "Explore neighborhoods with local guides",
+                "Scenic parks and natural attractions",
+                "Morning hike or walking tour of the city"
+            ],
+            "afternoon": [
+                "Shopping and market exploration",
+                "Local restaurant recommendations for lunch",
+                "Activities matching your interests",
+                "Relax at scenic viewpoints",
+                "Participate in a local activity or class"
+            ],
+            "evening": [
+                "Dinner at popular local restaurants",
+                "Evening entertainment or nightlife",
+                "Scenic viewpoints for sunset photography",
+                "Local bars and traditional hangouts",
+                "Live performances or cultural events"
+            ]
+        }
+    }
+
+    total_days = max(int(duration), 1)
+    
+    # Get activities for the selected travel style
+    style_key = travel_style if travel_style in STYLE_ACTIVITIES else "Balanced"
+    style_acts = STYLE_ACTIVITIES[style_key]
+    
+    lines = [f"# {total_days}-Day {destination} Itinerary ({travel_style} Travel)", ""]
+    
+    # Generate day-by-day itinerary
+    for day in range(1, total_days + 1):
+        lines.append(f"## Day {day}:")
+        
+        # Vary activities across days by rotating through the activity list
+        morning_idx = (day - 1) % len(style_acts["morning"])
+        afternoon_idx = (day % len(style_acts["afternoon"]))
+        evening_idx = ((day + 1) % len(style_acts["evening"]))
+        
+        morning_act = style_acts["morning"][morning_idx]
+        afternoon_act = style_acts["afternoon"][afternoon_idx]
+        evening_act = style_acts["evening"][evening_idx]
+        
+        # Add constraint note if present
+        constraint_note = f" (respecting {constraints})" if constraints else ""
+        
+        lines.append(f"- **Morning**: {morning_act}{constraint_note if day == 1 else ''}")
+        lines.append(f"- **Afternoon**: {afternoon_act}")
+        lines.append(f"- **Evening**: {evening_act}")
+        lines.append("")
+    
+    # Add budget summary
+    lines.append(f"## Budget Summary ({budget_level} Level):")
+    lines.append(f"- Budget level: {budget_level}")
+    lines.append("- Costs may vary based on season, specific venues, and current exchange rates.")
+    if constraints:
+        lines.append(f"- Travel constraints considered: {constraints}")
+    lines.append(f"- Includes accommodation, meals, activities, and local transport.")
+    
+    return "\n".join(lines)
 
 
 def _normalize_country_label(destination: str) -> str:
@@ -338,18 +538,37 @@ async def plan_trip(request: TripRequest):
                             output=fallback_itinerary,
                         )
                     )
+                else:
+                    synthesized = _dynamic_itinerary_from_context(
+                        destination=request.destination,
+                        duration=request.duration,
+                        budget_level=request.budgetLevel,
+                        travel_style=request.travelStyle,
+                        constraints=request.constraints or "",
+                        source_text=f"{final_answer}\n{fallback_itinerary}",
+                    )
+                    final_answer = synthesized
+                    intermediate_steps.append(
+                        IntermediateStep(
+                            tool="generate_dynamic_itinerary_fallback",
+                            input=itinerary_input,
+                            output=synthesized,
+                        )
+                    )
 
             return TripResponse(
                 final_answer=final_answer,
                 intermediate_steps=intermediate_steps
             )
         except ImportError:
-            # Fallback to sample data if agent_core is not available
-            itinerary = generate_sample_itinerary(
-                request.destination,
-                request.duration,
-                request.budgetLevel,
-                request.travelStyle
+            # Fallback to dynamic structured itinerary if agent_core is not available
+            itinerary = _dynamic_itinerary_from_context(
+                destination=request.destination,
+                duration=request.duration,
+                budget_level=request.budgetLevel,
+                travel_style=request.travelStyle,
+                constraints=request.constraints or "",
+                source_text="",
             )
             
             intermediate_steps = [
@@ -649,6 +868,22 @@ async def get_food_budget(request: FoodRequest):
             }
         )
         return json.loads(data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/food/day-plan")
+async def get_daily_food_plan(request: FoodDayPlanRequest):
+    try:
+        from backend.tools.food_price_tool import build_daily_food_plan
+
+        return build_daily_food_plan(
+            city=request.city,
+            country=request.country or "",
+            days=request.days,
+            budget_level=request.budget_level,
+            day_contexts=request.itinerary_days or [],
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

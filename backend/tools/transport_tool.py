@@ -290,6 +290,12 @@ def get_transport_options_data(from_city: str, to_city: str, date: Optional[str]
         "flights": flight_offers[:3],
         "flightSource": "travelpayouts_live" if flight_offers else (flights_data.get("error_type") or "unavailable"),
         "flightMessage": flights_data.get("message", "") if not flight_offers else "",
+        "routeResolved": {
+            "originCity": flights_data.get("origin_city", from_city),
+            "destinationCity": flights_data.get("destination_city", to_city),
+            "originIata": flights_data.get("origin_iata", ""),
+            "destinationIata": flights_data.get("destination_iata", ""),
+        },
         "trains": trains,
         "buses": buses,
         "bestValue": best_value,

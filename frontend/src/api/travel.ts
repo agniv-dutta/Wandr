@@ -7,6 +7,7 @@ import {
   DestinationInfo,
   TransportPricesResponse,
   FoodEstimate,
+  FoodDayPlan,
   BudgetBreakdown,
   PlaceSuggestion,
   TransportOverviewResponse,
@@ -152,6 +153,17 @@ export const travelApi = {
 
   getFoodEstimate: async (payload: { city: string; country?: string; days: number; budget_level: string }): Promise<FoodEstimate> => {
     const response = await api.post<FoodEstimate>('/api/food', payload);
+    return response.data;
+  },
+
+  getDailyFoodPlan: async (payload: {
+    city: string;
+    country?: string;
+    days: number;
+    budget_level: string;
+    itinerary_days?: string[];
+  }): Promise<FoodDayPlan> => {
+    const response = await api.post<FoodDayPlan>('/api/food/day-plan', payload);
     return response.data;
   },
 

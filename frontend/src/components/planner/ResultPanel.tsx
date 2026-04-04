@@ -184,7 +184,11 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({ result, isLoading, onR
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3 }}
               >
-                <CurrencyTab destination={result!.destination} />
+                <CurrencyTab
+                  destination={result!.destination}
+                  budgetCurrency={result!.budgetCurrency}
+                  budgetAmount={result!.budgetAmount}
+                />
               </motion.div>
             )}
             {activeTab === 'destination' && (

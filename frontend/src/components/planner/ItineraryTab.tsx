@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { travelApi } from '../../api/travel';
-import { FoodEstimate } from '../../types';
+import { FoodDayPlan, FoodDayPlanItem } from '../../types';
 
 interface ItineraryTabProps {
   finalAnswer: string;
@@ -58,7 +58,7 @@ const parseDayPlan = (text: string): DayPlan[] => {
 
 export const ItineraryTab: React.FC<ItineraryTabProps> = ({ finalAnswer, destination, duration, budgetLevel, budgetCurrency }) => {
   const [expandedDays, setExpandedDays] = useState<Set<number>>(new Set([1]));
-  const [foodEstimate, setFoodEstimate] = useState<FoodEstimate | null>(null);
+  const [foodPlan, setFoodPlan] = useState<FoodDayPlan | null>(null);
   const [foodError, setFoodError] = useState<string | null>(null);
   const [foodRate, setFoodRate] = useState(1);
 
@@ -69,35 +69,41 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ finalAnswer, destina
   useEffect(() => {
     const fetchFood = async () => {
       try {
-        const response = await travelApi.getFoodEstimate({
+        const response = await travelApi.getDailyFoodPlan({
           city: destination,
           country: '',
           days: duration,
           budget_level: budgetLevel.toLowerCase(),
+          itinerary_days: days.map(day => day.activities.join('; ')),
         });
-        setFoodEstimate(response);
+        setFoodPlan(response);
       } catch (err) {
         setFoodError(err instanceof Error ? err.message : 'Failed to fetch food estimate');
       }
     };
 
-    if (destination) {
+    if (destination && days.length > 0) {
       fetchFood();
     }
-  }, [destination, duration, budgetLevel]);
+  }, [destination, duration, budgetLevel, finalAnswer]);
 
   useEffect(() => {
     const fetchFoodRate = async () => {
-      if (!foodEstimate || foodEstimate.currency === budgetCurrency) {
+      if (!foodPlan || foodPlan.currency === budgetCurrency) {
         setFoodRate(1);
         return;
       }
-      const response = await travelApi.convertCurrency(foodEstimate.currency, budgetCurrency, 1);
+      const response = await travelApi.convertCurrency(foodPlan.currency, budgetCurrency, 1);
       setFoodRate(response.rate || 1);
     };
 
     fetchFoodRate();
-  }, [foodEstimate, budgetCurrency]);
+  }, [foodPlan, budgetCurrency]);
+
+  const getFoodForDay = (dayNumber: number): FoodDayPlanItem | null => {
+    if (!foodPlan?.days?.length) return null;
+    return foodPlan.days.find(item => item.day === dayNumber) || foodPlan.days[0] || null;
+  };
 
   const toggleDay = (dayNum: number) => {
     const newExpanded = new Set(expandedDays);
@@ -114,7 +120,9 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ finalAnswer, destina
       {days.length > 0 ? (
         <>
           <div className="space-y-3">
-            {days.map((day, idx) => (
+            {days.map((day, idx) => {
+              const dayFood = getFoodForDay(day.dayNumber);
+              return (
               <motion.div
                 key={day.dayNumber}
                 initial={{ opacity: 0, y: 10 }}
@@ -167,26 +175,39 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ finalAnswer, destina
                         {foodError && (
                           <p className="text-xs text-red-400">{foodError}</p>
                         )}
-                        {foodEstimate && foodEstimate.daily_food_budget > 0 && (
+                        {dayFood && dayFood.daily_total > 0 && (
                           <div className="space-y-2">
                             <div className="flex flex-wrap gap-2">
                               <span className="px-3 py-1 text-xs bg-amber-500/10 text-amber-300 rounded-full">
-                                Breakfast {budgetCurrency} {(foodEstimate.breakfast_avg * foodRate).toFixed(0)}
+                                Breakfast {budgetCurrency} {(dayFood.breakfast.amount * foodRate).toFixed(0)}
                               </span>
                               <span className="px-3 py-1 text-xs bg-amber-500/10 text-amber-300 rounded-full">
-                                Lunch {budgetCurrency} {(foodEstimate.lunch_avg * foodRate).toFixed(0)}
+                                Lunch {budgetCurrency} {(dayFood.lunch.amount * foodRate).toFixed(0)}
                               </span>
                               <span className="px-3 py-1 text-xs bg-amber-500/10 text-amber-300 rounded-full">
-                                Dinner {budgetCurrency} {(foodEstimate.dinner_avg * foodRate).toFixed(0)}
+                                Dinner {budgetCurrency} {(dayFood.dinner.amount * foodRate).toFixed(0)}
                               </span>
                             </div>
                             <p className="text-sm font-semibold text-zinc-200">
-                              Daily subtotal: {budgetCurrency} {(foodEstimate.daily_food_budget * foodRate).toFixed(0)}
+                              Daily subtotal: {budgetCurrency} {(dayFood.daily_total * foodRate).toFixed(0)}
                             </p>
-                            <p className="text-xs text-zinc-400">🍜 {foodEstimate.notes}</p>
+                            <p className="text-xs text-zinc-400">🍽 Breakfast idea: {dayFood.breakfast.suggestion}</p>
+                            <p className="text-xs text-zinc-400">🥗 Lunch idea: {dayFood.lunch.suggestion}</p>
+                            <p className="text-xs text-zinc-400">🍲 Dinner idea: {dayFood.dinner.suggestion}</p>
+                            <p className="text-xs text-zinc-500">{foodPlan?.notes}</p>
+                            {dayFood.nearby_source && (
+                              <a
+                                href={dayFood.nearby_source}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-block text-xs text-violet-300 hover:text-violet-200 underline"
+                              >
+                                Explore nearby food picks
+                              </a>
+                            )}
                           </div>
                         )}
-                        {foodEstimate && foodEstimate.daily_food_budget === 0 && (
+                        {dayFood && dayFood.daily_total === 0 && (
                           <p className="text-xs text-zinc-400">Food estimate unavailable for this destination.</p>
                         )}
                       </div>
@@ -194,7 +215,8 @@ export const ItineraryTab: React.FC<ItineraryTabProps> = ({ finalAnswer, destina
                   )}
                 </div>
               </motion.div>
-            ))}
+              );
+            })}
           </div>
 
           {budgetSummary && (
