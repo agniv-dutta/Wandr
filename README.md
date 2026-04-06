@@ -25,6 +25,7 @@ Musafir uses an advanced AI agent orchestrated with **LangGraph ReAct** to intel
 | **Agniv Dutta** |
 | **Aditya Choudhuri** |
 | **Aaryan Dubey** |
+| **Aditya Pratap Singh** |
 
 </div>
 
